@@ -1,6 +1,7 @@
 import { useState, type SubmitEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_URL } from "../../config";
+import { formatApiError } from "../../lib/apiError";
 
 function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -41,21 +42,13 @@ function ResetPasswordPage() {
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-      const errors = data.errors;
-      const message =
-          typeof errors === "string"
-          ? errors
-          : Array.isArray(errors)
-              ? errors.join(", ")
-              : errors && typeof errors === "object"
-              ? Object.values(errors).flat().join(", ")
-              : "This password reset link is invalid or expired.";
-
-      setError(message);
-      return;
+        setError(
+          formatApiError(data, "This password reset link is invalid or expired!"),
+        );
+        return;
       }
 
       setMessage("Password updated successfully. Redirecting to sign in...");

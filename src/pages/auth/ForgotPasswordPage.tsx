@@ -1,27 +1,36 @@
 import { useState, type SubmitEvent } from "react";
 import { Link } from "react-router-dom";
 import { API_URL } from "../../config";
+import { formatApiError } from "../../lib/apiError";
 
 function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
+    setError("");
     setMessage("");
     setLoading(true);
 
     try {
-      await fetch(`${API_URL}/auth/password`, {
+      const response = await fetch(`${API_URL}/auth/password`, {
         method: "POST",
         headers: { Accept: "application/json", "Content-Type": "application/json" },
         body: JSON.stringify({ user: { email } }),
       });
 
-      setMessage("If this email is registered, password reset instructions have been sent. Please check your email.");
+      if (response.ok) {
+        setMessage("If this email is registered, password reset instructions have been sent. Please check your email!");
+      } else {
+        const data = await response.json().catch(() => null);
+
+        setError(formatApiError(data, "We could not send the reset instructions. Please try again!"));
+      }
     } catch {
-      setMessage("Unable to connect to the server. Please try again.");
+      setError("Unable to connect to the server. Please try again!");
     } finally {
       setLoading(false);
     }
@@ -61,6 +70,12 @@ function ForgotPasswordPage() {
             required
             className="h-14 w-full rounded-xl border border-[#C9DACE] px-4 outline-none focus:border-[#23613F]"
           />
+
+          {error && (
+            <p className="mt-4 rounded-xl bg-[#FBEEEE] px-4 py-3 text-sm text-[#B42318]">
+              {error}
+            </p>
+          )}
 
           {message && (
             <p className="mt-4 rounded-xl bg-[#EFF7F1] px-4 py-3 text-sm text-[#23613F]">

@@ -1,9 +1,10 @@
+import { useOutletContext } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
 import type { CurrentUser } from "../../../types/user";
 
-type DashboardPageProps = { user: CurrentUser; };
+function SupportDashboardPage() {
+  const user = useOutletContext<CurrentUser>();
 
-function SupportDashboardPage({ user }: DashboardPageProps) {
   return (
     <AppLayout user={user} title="Overview">
       <div className="flex items-start justify-between">

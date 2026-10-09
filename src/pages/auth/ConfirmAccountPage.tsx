@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { API_URL } from "../../config";
+import { formatApiError } from "../../lib/apiError";
 
 function ConfirmAccountPage() {
   const [message, setMessage] = useState("Confirming your account...");
@@ -15,7 +16,7 @@ function ConfirmAccountPage() {
 
     async function confirmAccount() {
       if (!token) {
-        setMessage("This confirmation link is invalid or expired.");
+        setMessage("This confirmation link is invalid or expired!");
         return;
       }
 
@@ -23,17 +24,21 @@ function ConfirmAccountPage() {
         const response = await fetch(`${API_URL}/auth/confirmation`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json", Accept: "application/json" },
-          body: JSON.stringify({ confirmation_token: token }),
+          body: JSON.stringify({ user: { confirmation_token: token } }),
         });
+
+        const data = await response.json().catch(() => null);
 
         if (response.ok) {
           setSuccess(true);
           setMessage("Your account has been confirmed successfully.");
         } else {
-          setMessage("This confirmation link is invalid or expired.");
+          setMessage(
+            formatApiError(data, "This confirmation link is invalid or expired!"),
+          );
         }
       } catch {
-        setMessage("Unable to connect to the server. Please try again.");
+        setMessage("Unable to connect to the server. Please try again!");
       }
     }
 

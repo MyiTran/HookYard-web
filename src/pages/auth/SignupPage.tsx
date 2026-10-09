@@ -1,6 +1,7 @@
 import { useState, type SubmitEvent } from "react";
 import { Link } from "react-router-dom";
 import { API_URL } from "../../config";
+import { formatApiError } from "../../lib/apiError";
 
 function SignupPage() {
   const [firstName, setFirstName] = useState("");
@@ -29,34 +30,20 @@ function SignupPage() {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
-          user: {
-            first_name: firstName,
-            last_name: lastName,
-            email,
-            password,
-            password_confirmation: passwordConfirmation,
-          },
+          user: { first_name: firstName, last_name: lastName, email, password, password_confirmation: passwordConfirmation,},
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        const errors = data.errors;
-        const errorMessage =
-          typeof errors === "string"
-            ? errors
-            : Array.isArray(errors)
-              ? errors.join(", ")
-              : errors && typeof errors === "object"
-                ? Object.values(errors as Record<string, string[]>).flat().join(", ")
-                : "This email is already registered or the information is invalid.";
-
-        setError(errorMessage);
+        setError(
+          formatApiError(data, "This email is already registered or the information is invalid!"),
+        );
         return;
       }
 
-      setMessage("Account created successfully. Please check your email to confirm your account.");
+      setMessage("Account created successfully. Please check your email to confirm your account!");
       setFirstName("");
       setLastName("");
       setEmail("");

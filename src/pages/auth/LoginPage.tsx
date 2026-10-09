@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { API_URL } from "../../config";
+import { formatApiError } from "../../lib/apiError";
 
 function LoginPage() {
   const [email, setEmail] = useState("");
@@ -21,10 +22,10 @@ function LoginPage() {
       });
 
       const token = response.headers.get("Authorization");
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
 
       if (!response.ok || !token) {
-        setError(data.error || "Email or password is incorrect!");
+        setError(formatApiError(data, "Email or password is incorrect!"));
         return;
       }
 

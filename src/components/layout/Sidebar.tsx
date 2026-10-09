@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { API_URL } from "../../config";
 import type { CurrentUser } from "../../types/user";
 import MenuIcon from "./MenuIcon";
 
@@ -32,7 +33,7 @@ function Sidebar({ user }: SidebarProps) {
   async function logout() {
     const token = localStorage.getItem("token");
 
-    await fetch(`${import.meta.env.VITE_API_URL}/auth/sign_out`, {
+    await fetch(`${API_URL}/auth/sign_out`, {
       method: "DELETE",
       headers: { 
         "Accept": "application/json", 
@@ -41,7 +42,7 @@ function Sidebar({ user }: SidebarProps) {
     });
 
     localStorage.removeItem("token");
-    window.location.href = "/login";
+    window.location.href = "/users/sign_in";
   }
 
   return (
