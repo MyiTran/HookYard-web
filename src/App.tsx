@@ -9,6 +9,8 @@ import LoginPage from "./pages/auth/LoginPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import SignupPage from "./pages/auth/SignupPage";
 import SupportDashboardPage from "./pages/support/dashboard/DashboardPage";
+import ProjectDetailPage from "./pages/support/projects/ProjectDetailPage";
+import ProjectsPage from "./pages/support/projects/ProjectsPage";
 import type { CurrentUser, UserProfile } from "./types/user";
 
 const isAuthenticated = () => Boolean(localStorage.getItem("token"));
@@ -105,6 +107,8 @@ function App() {
 
       <Route element={<PrivateRoute />}>
         <Route path="/" element={<SupportDashboardPage />} />
+        <Route path="/projects" element={<ProjectsPage />} />
+        <Route path="/projects/:id" element={<ProjectDetailPage />} />
         <Route path="/admin" element={<AdminRoute />} />
       </Route>
 
