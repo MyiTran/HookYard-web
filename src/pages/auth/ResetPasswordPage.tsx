@@ -1,5 +1,6 @@
 import { useState, type SubmitEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import Brand from "../../components/branding/Brand";
 import { API_URL } from "../../config";
 import { formatApiError } from "../../lib/apiError";
 
@@ -66,7 +67,7 @@ function ResetPasswordPage() {
     <div className="flex min-h-screen items-center justify-center bg-[#EBEFEC] p-6 text-[#17211B]">
       <main className="w-full max-w-md rounded-[28px] border border-[#C8DACD] bg-white p-10 shadow-[0_24px_70px_rgba(32,78,53,0.10)]">
         <h1 className="text-3xl font-bold tracking-tight">
-          Hook<span className="text-[#23613F]">Yard</span>!
+          <Brand />
         </h1>
 
         <p className="mt-8 text-xs font-semibold uppercase tracking-[3px] text-[#718278]">
@@ -80,7 +81,7 @@ function ResetPasswordPage() {
         <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
           <div>
             <label htmlFor="password" className="mb-2 block text-sm font-semibold">
-              New password
+              New password <span className="text-[#B42318]">*</span>
             </label>
 
             <input
@@ -96,7 +97,7 @@ function ResetPasswordPage() {
 
           <div>
             <label htmlFor="passwordConfirmation" className="mb-2 block text-sm font-semibold">
-              Confirm new password
+              Confirm new password <span className="text-[#B42318]">*</span>
             </label>
 
             <input

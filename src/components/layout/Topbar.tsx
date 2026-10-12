@@ -1,3 +1,4 @@
+import BellIcon from "../icons/BellIcon";
 import type { CurrentUser } from "../../types/user";
 
 type TopbarProps = { user: CurrentUser; title: string; };
@@ -22,10 +23,7 @@ function Topbar({ user, title }: TopbarProps) {
         <div className="h-9 w-px bg-[#DCE6DF]" />
 
         <button type="button" aria-label="Notifications" className="relative flex h-10 w-10 items-center justify-center rounded-xl text-[#405348] transition hover:bg-[#EFF5F1]">
-          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
-            <path d="M10 21h4" />
-          </svg>
+          <BellIcon />
           <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#43AD61]" />
         </button>
       </div>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Brand from "../../components/branding/Brand";
 import { API_URL } from "../../config";
 import { formatApiError } from "../../lib/apiError";
 
@@ -44,7 +45,7 @@ function LoginPage() {
         <section className="hidden flex-col bg-[#DFECE1] p-12 lg:flex lg:p-16">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
-              Hook<span className="text-[#23613F]">Yard</span>
+              <Brand />
             </h1>
 
             <p className="mt-2 text-xs font-medium uppercase tracking-[4px] text-[#65766B]">
@@ -90,7 +91,7 @@ function LoginPage() {
             >
               <div>
                 <label htmlFor="email" className="mb-2 block text-sm font-semibold">
-                  Email
+                  Email <span className="text-[#B42318]">*</span>
                 </label>
 
                 <input
@@ -107,7 +108,7 @@ function LoginPage() {
 
               <div>
                 <label htmlFor="password" className="mb-2 block text-sm font-semibold">
-                  Password
+                  Password <span className="text-[#B42318]">*</span>
                 </label>
 
                 <input
@@ -120,7 +121,7 @@ function LoginPage() {
                   required
                   className="h-14 w-full rounded-xl border border-[#C9DACE] bg-white px-4 outline-none transition placeholder:text-[#A4B0A8] focus:border-[#23613F] focus:ring-2 focus:ring-[#23613F]/10"
                 />
-                <div className="mb-2 flex items-center justify-between">
+                <div className="mt-3 mb-2 flex items-center justify-between">
                     <a href="/users/password/new" className="text-sm font-semibold text-[#23613F] hover:underline">Forgot password?</a>
                 </div>
               </div>
