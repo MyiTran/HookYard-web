@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import Brand from "../branding/Brand";
 import { API_URL } from "../../config";
 import type { CurrentUser } from "../../types/user";
 import MenuIcon from "./MenuIcon";
@@ -49,7 +50,7 @@ function Sidebar({ user }: SidebarProps) {
     <aside className="flex w-64 shrink-0 flex-col bg-[#CFE0D3] px-6 py-8">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">
-          Hook<span className="text-[#23613F]">Yard</span>
+          <Brand />
         </h1>
         <p className="mt-1 text-xs font-medium uppercase tracking-[3px] text-[#53665A]">Webhook operations</p>
       </div>

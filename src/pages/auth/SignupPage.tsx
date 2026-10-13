@@ -1,5 +1,6 @@
 import { useState, type SubmitEvent } from "react";
 import { Link } from "react-router-dom";
+import Brand from "../../components/branding/Brand";
 import { API_URL } from "../../config";
 import { formatApiError } from "../../lib/apiError";
 
@@ -60,7 +61,7 @@ function SignupPage() {
     <div className="flex min-h-screen items-center justify-center bg-[#EBEFEC] p-6 text-[#17211B]">
       <main className="w-full max-w-md rounded-[28px] border border-[#C8DACD] bg-white p-10 shadow-[0_24px_70px_rgba(32,78,53,0.10)]">
         <h1 className="text-3xl font-bold tracking-tight">
-          Hook<span className="text-[#23613F]">Yard</span>!
+          <Brand />
         </h1>
 
         <p className="mt-8 text-xs font-semibold uppercase tracking-[3px] text-[#718278]">
@@ -86,28 +87,28 @@ function SignupPage() {
         <form onSubmit={handleSignup} className="mt-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="firstName" className="mb-2 block text-sm font-semibold">First Name</label>
+              <label htmlFor="firstName" className="mb-2 block text-sm font-semibold">First Name <span className="text-[#B42318]">*</span></label>
               <input id="firstName" type="text" value={firstName} onChange={(event) => setFirstName(event.target.value)} required placeholder="John" className="h-14 w-full rounded-xl border border-[#C9DACE] px-4 outline-none focus:border-[#23613F]" />
             </div>
 
             <div>
-              <label htmlFor="lastName" className="mb-2 block text-sm font-semibold">Last Name</label>
+              <label htmlFor="lastName" className="mb-2 block text-sm font-semibold">Last Name <span className="text-[#B42318]">*</span></label>
               <input id="lastName" type="text" value={lastName} onChange={(event) => setLastName(event.target.value)} required placeholder="Doe" className="h-14 w-full rounded-xl border border-[#C9DACE] px-4 outline-none focus:border-[#23613F]" />
             </div>
           </div>
 
           <div>
-            <label htmlFor="email" className="mb-2 block text-sm font-semibold">Email</label>
+            <label htmlFor="email" className="mb-2 block text-sm font-semibold">Email <span className="text-[#B42318]">*</span></label>
             <input id="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required placeholder="you@example.com" className="h-14 w-full rounded-xl border border-[#C9DACE] px-4 outline-none focus:border-[#23613F]" />
           </div>
 
           <div>
-            <label htmlFor="password" className="mb-2 block text-sm font-semibold">Password</label>
+            <label htmlFor="password" className="mb-2 block text-sm font-semibold">Password <span className="text-[#B42318]">*</span></label>
             <input id="password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required placeholder="••••••••" className="h-14 w-full rounded-xl border border-[#C9DACE] px-4 outline-none focus:border-[#23613F]" />
           </div>
 
           <div>
-            <label htmlFor="passwordConfirmation" className="mb-2 block text-sm font-semibold">Confirm Password</label>
+            <label htmlFor="passwordConfirmation" className="mb-2 block text-sm font-semibold">Confirm Password <span className="text-[#B42318]">*</span></label>
             <input id="passwordConfirmation" type="password" value={passwordConfirmation} onChange={(event) => setPasswordConfirmation(event.target.value)} required placeholder="••••••••" className="h-14 w-full rounded-xl border border-[#C9DACE] px-4 outline-none focus:border-[#23613F]" />
           </div>
 

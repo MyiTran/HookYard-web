@@ -1,7 +1,7 @@
-import type { CurrentUser, UserProfile, UserRole } from "../types/user";
+import { isUserRole, type CurrentUser, type UserProfile, type UserRole } from "../types/user";
 
 function normalizeRole(role: UserProfile["role"]): UserRole | null {
-  return role === "admin" || role === "support" ? role : null;
+  return isUserRole(role) ? role : null;
 }
 
 export function formatUserName(firstName: string, lastName: string): string {
