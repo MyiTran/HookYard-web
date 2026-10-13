@@ -1,12 +1,17 @@
 import { type SubmitEvent } from "react";
-import {
-  DEFAULT_PROJECT_FILTERS,
-  type ProjectFilters,
-  type ProjectRoleFilter,
-  type ProjectSortOption,
-} from "../../lib/projectFilters";
+import type { ProjectMembershipRole } from "../../types/project";
 import FilterSelect from "../filters/FilterSelect";
 import Button from "../ui/Button";
+
+export type ProjectRoleFilter = "all" | ProjectMembershipRole;
+
+export type ProjectSortOption = "created_desc" | "created_asc" | "name_asc";
+
+export type ProjectFilters = {
+  search: string;
+  role: ProjectRoleFilter;
+  sort: ProjectSortOption;
+};
 
 type ProjectFilterBarProps = {
   filters: ProjectFilters;
@@ -15,6 +20,7 @@ type ProjectFilterBarProps = {
   onSearchDraftChange: (value: string) => void;
   onSearchSubmit: () => void;
   onReset: () => void;
+  isFiltered: boolean;
 };
 
 const ROLE_OPTIONS: { value: ProjectRoleFilter; label: string }[] = [
@@ -24,9 +30,9 @@ const ROLE_OPTIONS: { value: ProjectRoleFilter; label: string }[] = [
 ];
 
 const SORT_OPTIONS: { value: ProjectSortOption; label: string }[] = [
-  { value: "newest", label: "Recently created" },
-  { value: "oldest", label: "Oldest created" },
-  { value: "name", label: "Name A–Z" },
+  { value: "created_desc", label: "Recently created" },
+  { value: "created_asc", label: "Oldest created" },
+  { value: "name_asc", label: "Name A–Z" },
 ];
 
 const FIELD_LABEL = "mb-2 block text-xs font-semibold uppercase tracking-[2px] text-[#718078]";
@@ -38,12 +44,8 @@ function ProjectFilterBar({
   onSearchDraftChange,
   onSearchSubmit,
   onReset,
+  isFiltered,
 }: ProjectFilterBarProps) {
-  const isFiltered =
-    filters.search !== DEFAULT_PROJECT_FILTERS.search ||
-    filters.role !== DEFAULT_PROJECT_FILTERS.role ||
-    filters.sort !== DEFAULT_PROJECT_FILTERS.sort;
-
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     onSearchSubmit();
