@@ -1,14 +1,18 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate, useOutletContext, useParams } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
+import EventIcon from "../../../components/icons/EventIcon";
+import FailedDeliveryIcon from "../../../components/icons/FailedDeliveryIcon";
+import PlugIcon from "../../../components/icons/PlugIcon";
+import SuccessIcon from "../../../components/icons/SuccessIcon";
 import CollaboratorsList from "../../../components/projects/CollaboratorsList";
-import ConfirmDialog from "../../../components/projects/ConfirmDialog";
 import InviteCollaboratorModal from "../../../components/projects/InviteCollaboratorModal";
-import MetricCard from "../../../components/projects/MetricCard";
 import PendingInvitationsList from "../../../components/projects/PendingInvitationsList";
 import ProjectFormModal from "../../../components/projects/ProjectFormModal";
 import RoleBadge from "../../../components/projects/RoleBadge";
 import Button from "../../../components/ui/Button";
+import ConfirmDialog from "../../../components/ui/ConfirmDialog";
+import MetricCard from "../../../components/ui/MetricCard";
 import { formatUserName } from "../../../lib/currentUser";
 import { formatDate } from "../../../lib/dateFormat";
 import {
@@ -23,32 +27,6 @@ import {
 } from "../../../lib/projectApi";
 import type { Project, ProjectInvitation, ProjectMembership } from "../../../types/project";
 import type { CurrentUser } from "../../../types/user";
-
-const ENDPOINTS_ICON = (
-  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-    <path d="M9 7V3M15 7V3M7 7h10v4a5 5 0 0 1-5 5v5" />
-  </svg>
-);
-
-const EVENTS_ICON = (
-  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-    <path d="M13 3 4 14h6l-1 7 9-11h-6l1-7Z" />
-  </svg>
-);
-
-const SUCCESS_ICON = (
-  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-    <circle cx="12" cy="12" r="9" />
-    <path d="m8.5 12 2.5 2.5 4.5-5" />
-  </svg>
-);
-
-const FAILED_ICON = (
-  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-    <path d="M12 4 3 20h18L12 4Z" />
-    <path d="M12 10v4M12 17h.01" />
-  </svg>
-);
 
 function ProjectDetailPage() {
   const user = useOutletContext<CurrentUser>();
@@ -257,38 +235,45 @@ function ProjectDetailPage() {
           <p className="mt-6 rounded-xl bg-[#FBEEEE] px-4 py-3 text-sm text-[#B42318]">{actionError}</p>
         )}
 
+        <section className="mt-6 rounded-[18px] border border-[#D8E3DB] bg-white px-5 py-4 shadow-[0_8px_30px_rgba(32,78,53,0.05)]">
+          <h2 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Project information</h2>
+
+          <dl className="mt-3 flex flex-wrap gap-x-12 gap-y-3">
+            <div>
+              <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Created</dt>
+              <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{formatDate(project.created_at)}</dd>
+            </div>
+
+            <div>
+              <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Updated</dt>
+              <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{formatDate(project.updated_at)}</dd>
+            </div>
+
+            <div>
+              <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Your role</dt>
+              <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{isOwner ? "Owner" : "Maintainer"}</dd>
+            </div>
+          </dl>
+        </section>
+
         <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard tone="blue" label="Endpoints" value="—" unavailable icon={ENDPOINTS_ICON} />
-          <MetricCard tone="purple" label="Events" value="—" unavailable icon={EVENTS_ICON} />
-          <MetricCard tone="green" label="Success rate" value="—" unavailable icon={SUCCESS_ICON} />
-          <MetricCard tone="red" label="Failed deliveries" value="—" unavailable icon={FAILED_ICON} />
+          <MetricCard tone="blue" label="Endpoints" value="—" unavailable icon={<PlugIcon />} />
+          <MetricCard tone="purple" label="Events" value="—" unavailable icon={<EventIcon />} />
+          <MetricCard tone="green" label="Success rate" value="—" unavailable icon={<SuccessIcon />} />
+          <MetricCard tone="red" label="Failed deliveries" value="—" unavailable icon={<FailedDeliveryIcon />} />
         </section>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
-          <section className="lg:col-span-2">
-            <div className="rounded-[18px] border border-[#D8E3DB] bg-white p-5 shadow-[0_8px_30px_rgba(32,78,53,0.05)]">
-              <h2 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Project information</h2>
+          <section className="rounded-[18px] border border-[#D8E3DB] bg-white p-5 shadow-[0_8px_30px_rgba(32,78,53,0.05)] lg:col-span-2">
+            <h2 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Endpoints</h2>
 
-              <dl className="mt-4 grid gap-4 sm:grid-cols-3">
-                <div>
-                  <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Created</dt>
-                  <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{formatDate(project.created_at)}</dd>
-                </div>
-
-                <div>
-                  <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Your role</dt>
-                  <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{isOwner ? "Owner" : "Maintainer"}</dd>
-                </div>
-
-                <div>
-                  <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Updated</dt>
-                  <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{formatDate(project.updated_at)}</dd>
-                </div>
-              </dl>
+            <div className="mt-3 rounded-[14px] border border-dashed border-[#D8E3DB] px-5 py-8 text-center">
+              <p className="text-2xl font-semibold tracking-tight text-[#9AA79F]">—</p>
+              <p className="mt-1 text-xs font-medium text-[#8A9990]">Endpoint data is not available yet.</p>
             </div>
           </section>
 
-          <aside className="rounded-[18px] border border-[#D8E3DB] bg-white p-5 shadow-[0_8px_30px_rgba(32,78,53,0.05)]">
+          <section className="rounded-[18px] border border-[#D8E3DB] bg-white p-5 shadow-[0_8px_30px_rgba(32,78,53,0.05)]">
             <div>
               <h2 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Project access</h2>
               <p className="mt-0.5 text-xs font-medium text-[#718078]">{accessSummary}</p>
@@ -334,7 +319,7 @@ function ProjectDetailPage() {
                 </div>
               </div>
             )}
-          </aside>
+          </section>
         </div>
 
         {showEdit && (

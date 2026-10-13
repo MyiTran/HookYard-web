@@ -1,7 +1,7 @@
 import { useState, type SubmitEvent } from "react";
 import type { ApiResult } from "../../lib/apiRequest";
 import Button from "../ui/Button";
-import Modal from "./Modal";
+import Modal from "../ui/Modal";
 
 type InviteCollaboratorModalProps = {
   onSubmit: (email: string) => Promise<ApiResult<unknown>>;

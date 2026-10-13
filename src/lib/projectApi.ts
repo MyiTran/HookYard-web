@@ -1,8 +1,22 @@
-import type { Project, ProjectInvitation, ProjectMembership } from "../types/project";
+import type { Project, ProjectInvitation, ProjectMembership, ProjectMembershipRole } from "../types/project";
 import { apiRequest, apiRequestCollection, type ApiResult } from "./apiRequest";
 
-export function listProjects(): Promise<ApiResult<Project[]>> {
-  return apiRequestCollection<Project>("/projects");
+export type ProjectQueryParams = {
+  search?: string;
+  role?: ProjectMembershipRole;
+  order?: "created_desc" | "created_asc" | "name_asc";
+};
+
+export function getProjects(params: ProjectQueryParams = {}): Promise<ApiResult<Project[]>> {
+  const query = new URLSearchParams();
+
+  if (params.search) query.set("search", params.search);
+  if (params.role) query.set("role", params.role);
+  if (params.order) query.set("order", params.order);
+
+  const suffix = query.toString();
+
+  return apiRequestCollection<Project>(`/projects${suffix ? `?${suffix}` : ""}`);
 }
 
 export function createProject(name: string): Promise<ApiResult<Project>> {

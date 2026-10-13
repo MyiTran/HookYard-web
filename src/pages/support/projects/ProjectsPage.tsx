@@ -3,13 +3,32 @@ import { useOutletContext } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
 import MyInvitationsList from "../../../components/projects/MyInvitationsList";
 import ProjectCard, { PROJECT_ROW_GRID_COLS } from "../../../components/projects/ProjectCard";
-import ProjectFilterBar from "../../../components/projects/ProjectFilterBar";
+import ProjectFilterBar, { type ProjectFilters } from "../../../components/projects/ProjectFilterBar";
 import ProjectFormModal from "../../../components/projects/ProjectFormModal";
 import Button from "../../../components/ui/Button";
-import { acceptInvitation, createProject, listMyInvitations, listProjects } from "../../../lib/projectApi";
-import { DEFAULT_PROJECT_FILTERS, filterAndSortProjects, type ProjectFilters } from "../../../lib/projectFilters";
+import {
+  acceptInvitation,
+  createProject,
+  getProjects,
+  listMyInvitations,
+  type ProjectQueryParams,
+} from "../../../lib/projectApi";
 import type { Project, ProjectInvitation } from "../../../types/project";
 import type { CurrentUser } from "../../../types/user";
+
+const DEFAULT_PROJECT_FILTERS: ProjectFilters = {
+  search: "",
+  role: "all",
+  sort: "created_desc",
+};
+
+function toProjectQuery(filters: ProjectFilters): ProjectQueryParams {
+  return {
+    search: filters.search || undefined,
+    role: filters.role === "all" ? undefined : filters.role,
+    order: filters.sort,
+  };
+}
 
 function ProjectsPage() {
   const user = useOutletContext<CurrentUser>();
@@ -17,43 +36,64 @@ function ProjectsPage() {
   const [invitations, setInvitations] = useState<ProjectInvitation[]>([]);
   const [filters, setFilters] = useState<ProjectFilters>(DEFAULT_PROJECT_FILTERS);
   const [searchDraft, setSearchDraft] = useState("");
+  const [reloadToken, setReloadToken] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [inviteError, setInviteError] = useState("");
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
 
-  async function loadProjects() {
-    const result = await listProjects();
-
-    if (result.ok) {
-      setProjects(result.data);
-      setError("");
-      return;
-    }
-
-    setError(result.error);
-  }
-
-  async function loadInvitations() {
-    const result = await listMyInvitations();
-
-    if (result.ok) setInvitations(result.data);
-  }
-
   useEffect(() => {
+    let cancelled = false;
+
     async function load() {
-      await Promise.all([loadProjects(), loadInvitations()]);
+      const result = await getProjects(toProjectQuery(filters));
+
+      if (cancelled) return;
+
+      if (result.ok) {
+        setProjects(result.data);
+        setError("");
+      } else {
+        setError(result.error);
+      }
+
       setLoading(false);
     }
 
     load();
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [filters, reloadToken]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      const result = await listMyInvitations();
+
+      if (!cancelled && result.ok) setInvitations(result.data);
+    }
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadToken]);
+
+  function applyFilters(next: ProjectFilters) {
+    setLoading(true);
+    setError("");
+    setFilters(next);
+  }
 
   async function handleCreate(name: string) {
     const result = await createProject(name);
 
-    if (result.ok) await loadProjects();
+    if (result.ok) setReloadToken((token) => token + 1);
 
     return result;
   }
@@ -70,20 +110,23 @@ function ProjectsPage() {
       return;
     }
 
-    await Promise.all([loadProjects(), loadInvitations()]);
+    setReloadToken((token) => token + 1);
     setAcceptingId(null);
   }
 
   function handleSearchSubmit() {
-    setFilters((current) => ({ ...current, search: searchDraft.trim() }));
+    applyFilters({ ...filters, search: searchDraft.trim() });
   }
 
   function handleReset() {
     setSearchDraft("");
-    setFilters(DEFAULT_PROJECT_FILTERS);
+    applyFilters(DEFAULT_PROJECT_FILTERS);
   }
 
-  const visibleProjects = filterAndSortProjects(projects, filters);
+  const isFiltered =
+    filters.search !== DEFAULT_PROJECT_FILTERS.search ||
+    filters.role !== DEFAULT_PROJECT_FILTERS.role ||
+    filters.sort !== DEFAULT_PROJECT_FILTERS.sort;
 
   return (
     <AppLayout user={user} title="Projects">
@@ -116,13 +159,13 @@ function ProjectsPage() {
       )}
 
       <section className="mt-8">
-        {loading ? (
+        {loading && projects.length === 0 && !isFiltered ? (
           <p className="text-sm font-medium text-[#607267]">Loading projects...</p>
         ) : error ? (
           <div className="rounded-[18px] border border-[#F1D5D5] bg-[#FBEEEE] px-6 py-8 text-sm font-medium text-[#B42318]">
             {error}
           </div>
-        ) : projects.length === 0 ? (
+        ) : projects.length === 0 && !isFiltered ? (
           <div className="rounded-[18px] border border-dashed border-[#C2D4C7] bg-white px-6 py-14 text-center shadow-[0_8px_30px_rgba(32,78,53,0.05)]">
             <h3 className="text-lg font-semibold tracking-tight">No projects yet</h3>
             <p className="mx-auto mt-2 max-w-md text-sm font-medium text-[#607267]">
@@ -137,14 +180,17 @@ function ProjectsPage() {
           <>
             <ProjectFilterBar
               filters={filters}
-              onFiltersChange={setFilters}
+              onFiltersChange={applyFilters}
               searchDraft={searchDraft}
               onSearchDraftChange={setSearchDraft}
               onSearchSubmit={handleSearchSubmit}
               onReset={handleReset}
+              isFiltered={isFiltered}
             />
 
-            {visibleProjects.length === 0 ? (
+            {loading ? (
+              <p className="mt-5 text-sm font-medium text-[#607267]">Loading projects...</p>
+            ) : projects.length === 0 ? (
               <p className="mt-8 rounded-[18px] border border-dashed border-[#C2D4C7] bg-white px-6 py-10 text-center text-sm font-medium text-[#607267]">
                 No projects match your filters.
               </p>
@@ -164,7 +210,7 @@ function ProjectsPage() {
                 </div>
 
                 <div className="divide-y divide-[#E4EBE6]">
-                  {visibleProjects.map((project) => (
+                  {projects.map((project) => (
                     <ProjectCard key={project.id} project={project} />
                   ))}
                 </div>
