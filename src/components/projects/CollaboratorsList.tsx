@@ -1,5 +1,6 @@
 import { formatUserName } from "../../lib/currentUser";
 import type { ProjectMembership, ProjectMembershipRole } from "../../types/project";
+import Button from "../ui/Button";
 import RoleBadge from "./RoleBadge";
 
 type CollaboratorsListProps = {
@@ -35,14 +36,14 @@ function CollaboratorsList({ memberships, currentUserRole, removingId, onRemove 
               <RoleBadge role={membership.role} />
 
               {removable && (
-                <button
-                  type="button"
+                <Button
+                  variant="dangerSoft"
+                  size="sm"
                   onClick={() => onRemove(membership)}
                   disabled={removingId === membership.id}
-                  className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#B42318] transition hover:bg-[#FBEEEE] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {removingId === membership.id ? "Removing..." : "Remove"}
-                </button>
+                </Button>
               )}
             </div>
           </li>

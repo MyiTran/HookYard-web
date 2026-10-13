@@ -1,5 +1,6 @@
 import { useState, type SubmitEvent } from "react";
-import type { ApiResult } from "../../lib/projectApi";
+import type { ApiResult } from "../../lib/apiRequest";
+import Button from "../ui/Button";
 import Modal from "./Modal";
 
 type InviteCollaboratorModalProps = {
@@ -55,21 +56,13 @@ function InviteCollaboratorModal({ onSubmit, onClose }: InviteCollaboratorModalP
         {error && <p className="rounded-xl bg-[#FBEEEE] px-4 py-3 text-sm text-[#B42318]">{error}</p>}
 
         <div className="flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-11 items-center rounded-xl border border-[#C9DACE] px-5 text-sm font-semibold text-[#405348] transition hover:bg-[#F1F6F2]"
-          >
+          <Button variant="secondary" size="lg" onClick={onClose}>
             Cancel
-          </button>
+          </Button>
 
-          <button
-            type="submit"
-            disabled={submitting || email.trim() === ""}
-            className="inline-flex h-11 items-center rounded-xl bg-[#214E35] px-5 text-sm font-semibold text-white transition hover:bg-[#173D28] disabled:cursor-not-allowed disabled:opacity-60"
-          >
+          <Button type="submit" variant="primary" size="lg" disabled={submitting || email.trim() === ""}>
             {submitting ? "Inviting..." : "Send invite"}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>

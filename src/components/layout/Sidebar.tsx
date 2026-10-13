@@ -1,11 +1,20 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Brand from "../branding/Brand";
+import Button from "../ui/Button";
 import { API_URL } from "../../config";
 import type { CurrentUser } from "../../types/user";
 import MenuIcon from "./MenuIcon";
 
 type SidebarProps = { user: CurrentUser; };
+
+type MenuItem = { name: string; path: string; exact?: boolean };
+
+function isMenuActive(currentPath: string, item: MenuItem): boolean {
+  if (item.exact) return currentPath === item.path;
+
+  return currentPath === item.path || currentPath.startsWith(`${item.path}/`);
+}
 
 function Sidebar({ user }: SidebarProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -14,16 +23,16 @@ function Sidebar({ user }: SidebarProps) {
   const location = useLocation();
   const currentPath = location.pathname;
 
-  const menuItems = isAdmin
+  const menuItems: MenuItem[] = isAdmin
     ? [
-        { name: "Overview", path: "/admin" },
+        { name: "Overview", path: "/admin", exact: true },
         { name: "Support accounts", path: "/admin/users" },
         { name: "Projects", path: "/admin/projects" },
         { name: "Endpoints", path: "/admin/endpoints" },
         { name: "Deliveries", path: "/admin/deliveries" },
       ]
     : [
-        { name: "Overview", path: "/" },
+        { name: "Overview", path: "/", exact: true },
         { name: "Projects", path: "/projects" },
         { name: "Endpoints", path: "/endpoints" },
         { name: "Deliveries", path: "/deliveries" },
@@ -47,7 +56,7 @@ function Sidebar({ user }: SidebarProps) {
   }
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col bg-[#CFE0D3] px-6 py-8">
+    <aside className="flex w-64 shrink-0 flex-col overflow-y-auto bg-[#CFE0D3] px-6 py-8">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">
           <Brand />
@@ -59,7 +68,7 @@ function Sidebar({ user }: SidebarProps) {
         <p className="mb-3 text-xs font-semibold uppercase tracking-[2px] text-[#53665A]">Workspace</p>
 
         {menuItems.map((item) => {
-          const active = currentPath === item.path;
+          const active = isMenuActive(currentPath, item);
 
           return (
             <Link
@@ -75,7 +84,7 @@ function Sidebar({ user }: SidebarProps) {
       </nav>
 
       <div className="relative mt-auto border-t border-[#B7CCBC] pt-5">
-        <button type="button" onClick={() => setShowUserMenu(!showUserMenu)} className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-[#C1D5C6]">
+        <button type="button" onClick={() => setShowUserMenu(!showUserMenu)} className="flex w-full cursor-pointer items-center gap-3 rounded-xl p-2 text-left transition hover:bg-[#C1D5C6]">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#214E35] font-semibold text-white">
             {user.name.charAt(0).toUpperCase()}
           </span>
@@ -94,9 +103,9 @@ function Sidebar({ user }: SidebarProps) {
               <p className="truncate text-xs text-[#607267]">{user.email}</p>
             </div>
 
-            <button type="button" onClick={logout} className="mt-2 flex h-10 w-full items-center rounded-lg px-3 text-sm font-medium text-[#934343] transition hover:bg-[#FBEEEE]">
+            <Button variant="dangerSoft" size="md" className="mt-2 w-full justify-start" onClick={logout}>
               Sign out
-            </button>
+            </Button>
           </div>
         )}
       </div>

@@ -1,6 +1,8 @@
 import { formatUserName } from "../../lib/currentUser";
 import { formatDate } from "../../lib/dateFormat";
 import type { ProjectInvitation } from "../../types/project";
+import Badge from "../ui/Badge";
+import Button from "../ui/Button";
 import RoleBadge from "./RoleBadge";
 
 type PendingInvitationsListProps = {
@@ -18,21 +20,26 @@ function PendingInvitationsList({ invitations, cancellingId, onCancel }: Pending
         return (
           <li key={invitation.id} className="flex flex-wrap items-center justify-between gap-4 py-4">
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">{name || "Invited user"}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="truncate text-sm font-semibold">{name || "Invited user"}</p>
+                <Badge tone="amber" dot>
+                  Pending
+                </Badge>
+              </div>
               <p className="text-xs font-medium text-[#718078]">Invited {formatDate(invitation.created_at)}</p>
             </div>
 
             <div className="flex items-center gap-3">
               <RoleBadge role={invitation.role} />
 
-              <button
-                type="button"
+              <Button
+                variant="dangerSoft"
+                size="sm"
                 onClick={() => onCancel(invitation)}
                 disabled={cancellingId === invitation.id}
-                className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#B42318] transition hover:bg-[#FBEEEE] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {cancellingId === invitation.id ? "Cancelling..." : "Cancel"}
-              </button>
+              </Button>
             </div>
           </li>
         );
