@@ -1,5 +1,6 @@
 import { formatUserName } from "../../lib/currentUser";
 import type { ProjectInvitation } from "../../types/project";
+import Button from "../ui/Button";
 
 type MyInvitationsListProps = {
   invitations: ProjectInvitation[];
@@ -28,14 +29,15 @@ function MyInvitationsList({ invitations, acceptingId, onAccept }: MyInvitations
               <p className="mt-1 text-xs font-medium text-[#718078]">From {inviter || "a HookYard user"}</p>
             </div>
 
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              size="lg"
+              className="shrink-0"
               onClick={() => onAccept(invitation)}
               disabled={accepting}
-              className="inline-flex h-11 shrink-0 items-center rounded-xl bg-[#214E35] px-5 text-sm font-semibold text-white transition hover:bg-[#173D28] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {accepting ? "Accepting..." : "Accept"}
-            </button>
+            </Button>
           </li>
         );
       })}

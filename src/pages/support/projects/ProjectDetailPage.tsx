@@ -4,9 +4,11 @@ import AppLayout from "../../../components/layout/AppLayout";
 import CollaboratorsList from "../../../components/projects/CollaboratorsList";
 import ConfirmDialog from "../../../components/projects/ConfirmDialog";
 import InviteCollaboratorModal from "../../../components/projects/InviteCollaboratorModal";
+import MetricCard from "../../../components/projects/MetricCard";
 import PendingInvitationsList from "../../../components/projects/PendingInvitationsList";
 import ProjectFormModal from "../../../components/projects/ProjectFormModal";
 import RoleBadge from "../../../components/projects/RoleBadge";
+import Button from "../../../components/ui/Button";
 import { formatUserName } from "../../../lib/currentUser";
 import { formatDate } from "../../../lib/dateFormat";
 import {
@@ -21,6 +23,32 @@ import {
 } from "../../../lib/projectApi";
 import type { Project, ProjectInvitation, ProjectMembership } from "../../../types/project";
 import type { CurrentUser } from "../../../types/user";
+
+const ENDPOINTS_ICON = (
+  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <path d="M9 7V3M15 7V3M7 7h10v4a5 5 0 0 1-5 5v5" />
+  </svg>
+);
+
+const EVENTS_ICON = (
+  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <path d="M13 3 4 14h6l-1 7 9-11h-6l1-7Z" />
+  </svg>
+);
+
+const SUCCESS_ICON = (
+  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <circle cx="12" cy="12" r="9" />
+    <path d="m8.5 12 2.5 2.5 4.5-5" />
+  </svg>
+);
+
+const FAILED_ICON = (
+  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <path d="M12 4 3 20h18L12 4Z" />
+    <path d="M12 10v4M12 17h.01" />
+  </svg>
+);
 
 function ProjectDetailPage() {
   const user = useOutletContext<CurrentUser>();
@@ -196,96 +224,118 @@ function ProjectDetailPage() {
     );
   } else {
     const isOwner = project.current_user_role === "owner";
+    const memberLabel = `${memberships.length} member${memberships.length === 1 ? "" : "s"}`;
+    const pendingLabel = `${invitations.length} pending invitation${invitations.length === 1 ? "" : "s"}`;
+    const accessSummary = isOwner ? `${memberLabel} · ${pendingLabel}` : memberLabel;
 
     body = (
       <>
-        <div className="mt-6 flex flex-wrap items-start justify-between gap-4">
+        <header className="mt-6 flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="truncate text-3xl font-semibold tracking-tight">{project.name}</h1>
               {project.current_user_role && <RoleBadge role={project.current_user_role} />}
             </div>
 
-            <p className="mt-2 text-sm font-medium text-[#53665A]">Created {formatDate(project.created_at)}</p>
+            <p className="mt-2 text-sm font-medium text-[#53665A]">Webhook operations workspace</p>
           </div>
 
           {isOwner && (
             <div className="flex shrink-0 gap-3">
-              <button
-                type="button"
-                onClick={() => setShowEdit(true)}
-                className="inline-flex h-11 items-center rounded-xl border border-[#C9DACE] px-5 text-sm font-semibold text-[#405348] transition hover:bg-[#F1F6F2]"
-              >
+              <Button variant="secondary" size="md" onClick={() => setShowEdit(true)}>
                 Edit
-              </button>
+              </Button>
 
-              <button
-                type="button"
-                onClick={() => setShowDelete(true)}
-                className="inline-flex h-11 items-center rounded-xl border border-[#F1D5D5] px-5 text-sm font-semibold text-[#B42318] transition hover:bg-[#FBEEEE]"
-              >
+              <Button variant="dangerOutline" size="md" onClick={() => setShowDelete(true)}>
                 Delete
-              </button>
+              </Button>
             </div>
           )}
-        </div>
+        </header>
 
         {actionError && (
           <p className="mt-6 rounded-xl bg-[#FBEEEE] px-4 py-3 text-sm text-[#B42318]">{actionError}</p>
         )}
 
-        <section className="mt-8 rounded-[18px] border border-[#D8E3DB] bg-white p-6 shadow-[0_8px_30px_rgba(32,78,53,0.05)]">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+        <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard tone="blue" label="Endpoints" value="—" unavailable icon={ENDPOINTS_ICON} />
+          <MetricCard tone="purple" label="Events" value="—" unavailable icon={EVENTS_ICON} />
+          <MetricCard tone="green" label="Success rate" value="—" unavailable icon={SUCCESS_ICON} />
+          <MetricCard tone="red" label="Failed deliveries" value="—" unavailable icon={FAILED_ICON} />
+        </section>
+
+        <div className="mt-6 grid gap-6 lg:grid-cols-3">
+          <section className="lg:col-span-2">
+            <div className="rounded-[18px] border border-[#D8E3DB] bg-white p-5 shadow-[0_8px_30px_rgba(32,78,53,0.05)]">
+              <h2 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Project information</h2>
+
+              <dl className="mt-4 grid gap-4 sm:grid-cols-3">
+                <div>
+                  <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Created</dt>
+                  <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{formatDate(project.created_at)}</dd>
+                </div>
+
+                <div>
+                  <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Your role</dt>
+                  <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{isOwner ? "Owner" : "Maintainer"}</dd>
+                </div>
+
+                <div>
+                  <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Updated</dt>
+                  <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{formatDate(project.updated_at)}</dd>
+                </div>
+              </dl>
+            </div>
+          </section>
+
+          <aside className="rounded-[18px] border border-[#D8E3DB] bg-white p-5 shadow-[0_8px_30px_rgba(32,78,53,0.05)]">
             <div>
-              <h2 className="text-lg font-semibold tracking-tight">Collaborators</h2>
-              <p className="mt-1 text-sm font-medium text-[#718078]">People with access to this project.</p>
+              <h2 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Project access</h2>
+              <p className="mt-0.5 text-xs font-medium text-[#718078]">{accessSummary}</p>
             </div>
 
             {isOwner && (
-              <button
-                type="button"
-                onClick={() => setShowInvite(true)}
-                className="inline-flex h-11 items-center rounded-xl bg-[#214E35] px-5 text-sm font-semibold text-white transition hover:bg-[#173D28]"
-              >
+              <Button variant="primary" size="sm" className="mt-3 w-full" onClick={() => setShowInvite(true)}>
                 Invite collaborator
-              </button>
+              </Button>
             )}
-          </div>
 
-          <div className="mt-4">
-            {membershipsError ? (
-              <p className="rounded-xl bg-[#FBEEEE] px-4 py-3 text-sm text-[#B42318]">{membershipsError}</p>
-            ) : (
-              <CollaboratorsList
-                memberships={memberships}
-                currentUserRole={project.current_user_role}
-                removingId={removingId}
-                onRemove={setConfirmRemove}
-              />
-            )}
-          </div>
-        </section>
-
-        {isOwner && (
-          <section className="mt-6 rounded-[18px] border border-[#D8E3DB] bg-white p-6 shadow-[0_8px_30px_rgba(32,78,53,0.05)]">
-            <h2 className="text-lg font-semibold tracking-tight">Pending invitations</h2>
-            <p className="mt-1 text-sm font-medium text-[#718078]">Invitations waiting to be accepted.</p>
-
-            <div className="mt-4">
-              {invitationsError ? (
-                <p className="rounded-xl bg-[#FBEEEE] px-4 py-3 text-sm text-[#B42318]">{invitationsError}</p>
-              ) : invitations.length === 0 ? (
-                <p className="text-sm font-medium text-[#607267]">No pending invitations.</p>
+            <div className="mt-2">
+              {membershipsError ? (
+                <p className="rounded-xl bg-[#FBEEEE] px-4 py-3 text-sm text-[#B42318]">{membershipsError}</p>
               ) : (
-                <PendingInvitationsList
-                  invitations={invitations}
-                  cancellingId={cancellingId}
-                  onCancel={handleCancel}
+                <CollaboratorsList
+                  memberships={memberships}
+                  currentUserRole={project.current_user_role}
+                  removingId={removingId}
+                  onRemove={setConfirmRemove}
                 />
               )}
             </div>
-          </section>
-        )}
+
+            {isOwner && (
+              <div className="mt-3 border-t border-[#E4EBE6] pt-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[2px] text-[#B8862B]">
+                  Pending invitations
+                </p>
+
+                <div className="mt-1">
+                  {invitationsError ? (
+                    <p className="rounded-xl bg-[#FBEEEE] px-4 py-3 text-sm text-[#B42318]">{invitationsError}</p>
+                  ) : invitations.length === 0 ? (
+                    <p className="py-2 text-xs font-medium text-[#8A9990]">No pending invitations.</p>
+                  ) : (
+                    <PendingInvitationsList
+                      invitations={invitations}
+                      cancellingId={cancellingId}
+                      onCancel={handleCancel}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+          </aside>
+        </div>
 
         {showEdit && (
           <ProjectFormModal
