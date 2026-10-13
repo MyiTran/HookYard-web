@@ -1,122 +1,116 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import { Navigate, Outlet, Route, Routes, useOutletContext } from "react-router-dom";
+import { API_URL } from "./config";
+import { toCurrentUser } from "./lib/currentUser";
+import AdminDashboardPage from "./pages/admin/dashboard/DashboardPage";
+import ConfirmAccountPage from "./pages/auth/ConfirmAccountPage";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
+import LoginPage from "./pages/auth/LoginPage";
+import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
+import SignupPage from "./pages/auth/SignupPage";
+import SupportDashboardPage from "./pages/support/dashboard/DashboardPage";
+import type { CurrentUser, UserProfile } from "./types/user";
 
-function App() {
-  const [count, setCount] = useState(0)
+const isAuthenticated = () => Boolean(localStorage.getItem("token"));
 
+function ProfileLoadingScreen() {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+    <div className="flex min-h-screen items-center justify-center bg-[#EBEFEC] text-sm font-medium text-[#53665A]">
+      Loading your workspace...
+    </div>
+  );
 }
 
-export default App
+function PrivateRoute() {
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(isAuthenticated());
+  const [unauthorized, setUnauthorized] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      return;
+    }
+
+    let active = true;
+
+    async function loadProfile(authToken: string) {
+      try {
+        const response = await fetch(`${API_URL}/auth/profile`, {
+          headers: { Accept: "application/json", Authorization: authToken },
+        });
+
+        if (!active) return;
+
+        if (response.status === 401) {
+          localStorage.removeItem("token");
+          setUnauthorized(true);
+          return;
+        }
+
+        if (!response.ok) return;
+
+        const data = (await response.json()) as UserProfile;
+
+        if (active) setProfile(data);
+      } catch {
+        // Network failure: fall through to the sign-in redirect below.
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadProfile(token);
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (!isAuthenticated() || unauthorized) {
+    return <Navigate to="/users/sign_in" replace />;
+  }
+
+  if (loading) {
+    return <ProfileLoadingScreen />;
+  }
+
+  if (!profile) {
+    return <Navigate to="/users/sign_in" replace />;
+  }
+
+  return <Outlet context={toCurrentUser(profile)} />;
+}
+
+// UX-only guard: the backend remains the real authorization boundary.
+function AdminRoute() {
+  const user = useOutletContext<CurrentUser>();
+
+  if (user.role !== "admin") {
+    return <Navigate to="/" replace />;
+  }
+
+  return <AdminDashboardPage />;
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/users/sign_in" element={<LoginPage />} />
+      <Route path="/users/sign_up" element={<SignupPage />} />
+      <Route path="/users/password/new" element={<ForgotPasswordPage />} />
+      <Route path="/users/password/edit" element={<ResetPasswordPage />} />
+      <Route path="/confirm" element={<ConfirmAccountPage />} />
+
+      <Route element={<PrivateRoute />}>
+        <Route path="/" element={<SupportDashboardPage />} />
+        <Route path="/admin" element={<AdminRoute />} />
+      </Route>
+
+      <Route path="*" element={<Navigate to="/users/sign_in" replace />} />
+    </Routes>
+  );
+}
+
+export default App;
