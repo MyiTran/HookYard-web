@@ -1,19 +1,18 @@
 import { formatUserName } from "../../lib/currentUser";
 import type { ProjectInvitation } from "../../types/project";
-import Button from "../ui/Button";
+import InvitationActions from "./InvitationActions";
 
 type MyInvitationsListProps = {
   invitations: ProjectInvitation[];
-  acceptingId: string | null;
-  onAccept: (invitation: ProjectInvitation) => void;
+  processingId: string | null;
+  onInvitationAction: (invitation: ProjectInvitation, action: "accept" | "decline") => void;
 };
 
-function MyInvitationsList({ invitations, acceptingId, onAccept }: MyInvitationsListProps) {
+function MyInvitationsList({ invitations, processingId, onInvitationAction }: MyInvitationsListProps) {
   return (
     <ul className="space-y-3">
       {invitations.map((invitation) => {
         const inviter = formatUserName(invitation.invited_by.first_name, invitation.invited_by.last_name);
-        const accepting = acceptingId === invitation.id;
 
         return (
           <li
@@ -29,15 +28,12 @@ function MyInvitationsList({ invitations, acceptingId, onAccept }: MyInvitations
               <p className="mt-1 text-xs font-medium text-[#718078]">From {inviter || "a HookYard user"}</p>
             </div>
 
-            <Button
-              variant="primary"
+            <InvitationActions
               size="lg"
-              className="shrink-0"
-              onClick={() => onAccept(invitation)}
-              disabled={accepting}
-            >
-              {accepting ? "Accepting..." : "Accept"}
-            </Button>
+              busy={processingId === invitation.id}
+              onAccept={() => onInvitationAction(invitation, "accept")}
+              onDecline={() => onInvitationAction(invitation, "decline")}
+            />
           </li>
         );
       })}
