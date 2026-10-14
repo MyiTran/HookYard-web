@@ -13,6 +13,7 @@ import RoleBadge from "../../../components/projects/RoleBadge";
 import Button from "../../../components/ui/Button";
 import ConfirmDialog from "../../../components/ui/ConfirmDialog";
 import MetricCard from "../../../components/ui/MetricCard";
+import { useNotifications } from "../../../hooks/notificationsContext";
 import { formatUserName } from "../../../lib/currentUser";
 import { formatDate } from "../../../lib/dateFormat";
 import {
@@ -49,6 +50,8 @@ function ProjectDetailPage() {
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
+
+  const { notifications, changeVersion } = useNotifications();
 
   useEffect(() => {
     let cancelled = false;
@@ -92,6 +95,40 @@ function ProjectDetailPage() {
       cancelled = true;
     };
   }, [projectId]);
+
+  useEffect(() => {
+    if (changeVersion === 0) return;
+
+    const hasRelevantChange = notifications.some(
+      (notification) =>
+        notification.project_id === projectId &&
+        notification.read_at === null &&
+        (notification.kind === "project_invitation_accepted" ||
+          notification.kind === "project_invitation_declined"),
+    );
+
+    if (!hasRelevantChange) return;
+
+    let cancelled = false;
+
+    async function refresh() {
+      const [membershipsResult, invitationsResult] = await Promise.all([
+        listMemberships(projectId),
+        listProjectInvitations(projectId),
+      ]);
+
+      if (cancelled) return;
+
+      if (membershipsResult.ok) setMemberships(membershipsResult.data);
+      if (invitationsResult.ok) setInvitations(invitationsResult.data);
+    }
+
+    refresh();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [changeVersion, notifications, projectId]);
 
   async function loadMemberships() {
     const result = await listMemberships(projectId);
