@@ -1,3 +1,5 @@
+import ChevronDownIcon from "../icons/ChevronDownIcon";
+
 type FilterSelectOption = { value: string; label: string };
 
 type FilterSelectProps = {
@@ -25,16 +27,7 @@ function FilterSelect({ value, onChange, options, ariaLabel, id }: FilterSelectP
         ))}
       </select>
 
-      <svg
-        className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#718078]"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        aria-hidden="true"
-      >
-        <path d="m6 9 6 6 6-6" />
-      </svg>
+      <ChevronDownIcon className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#718078]" />
     </div>
   );
 }

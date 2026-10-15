@@ -1,10 +1,10 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate, useOutletContext, useParams } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
-import EventIcon from "../../../components/icons/EventIcon";
-import FailedDeliveryIcon from "../../../components/icons/FailedDeliveryIcon";
+import AlertTriangleIcon from "../../../components/icons/AlertTriangleIcon";
+import BoltIcon from "../../../components/icons/BoltIcon";
+import CheckCircleIcon from "../../../components/icons/CheckCircleIcon";
 import PlugIcon from "../../../components/icons/PlugIcon";
-import SuccessIcon from "../../../components/icons/SuccessIcon";
 import CollaboratorsList from "../../../components/projects/CollaboratorsList";
 import InviteCollaboratorModal from "../../../components/projects/InviteCollaboratorModal";
 import PendingInvitationsList from "../../../components/projects/PendingInvitationsList";
@@ -258,9 +258,9 @@ function ProjectDetailPage() {
 
         <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard tone="blue" label="Endpoints" value="—" unavailable icon={<PlugIcon />} />
-          <MetricCard tone="purple" label="Events" value="—" unavailable icon={<EventIcon />} />
-          <MetricCard tone="green" label="Success rate" value="—" unavailable icon={<SuccessIcon />} />
-          <MetricCard tone="red" label="Failed deliveries" value="—" unavailable icon={<FailedDeliveryIcon />} />
+          <MetricCard tone="purple" label="Events" value="—" unavailable icon={<BoltIcon />} />
+          <MetricCard tone="green" label="Success rate" value="—" unavailable icon={<CheckCircleIcon />} />
+          <MetricCard tone="red" label="Failed deliveries" value="—" unavailable icon={<AlertTriangleIcon />} />
         </section>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">

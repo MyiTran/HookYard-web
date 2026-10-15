@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import ChevronRightIcon from "../icons/ChevronRightIcon";
 import { formatDate } from "../../lib/dateFormat";
 import type { Project } from "../../types/project";
 import RoleBadge from "./RoleBadge";
@@ -63,9 +64,7 @@ function ProjectCard({ project }: ProjectCardProps) {
 
       <div className="flex justify-end">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EFF5F1] text-[#23613F] transition group-hover:bg-[#214E35] group-hover:text-white">
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M9 6l6 6-6 6" />
-          </svg>
+          <ChevronRightIcon />
         </span>
       </div>
     </Link>

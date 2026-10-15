@@ -1,5 +1,6 @@
 import { type SubmitEvent } from "react";
 import type { ProjectMembershipRole } from "../../types/project";
+import SearchIcon from "../icons/SearchIcon";
 import FilterSelect from "../filters/FilterSelect";
 import Button from "../ui/Button";
 
@@ -63,17 +64,7 @@ function ProjectFilterBar({
           </label>
 
           <div className="relative">
-            <svg
-              className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9EADA3]"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              aria-hidden="true"
-            >
-              <circle cx="11" cy="11" r="7" />
-              <path d="m20 20-4-4" />
-            </svg>
+            <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9EADA3]" />
 
             <input
               id="projectSearch"

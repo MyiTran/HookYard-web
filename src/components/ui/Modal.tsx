@@ -1,4 +1,5 @@
 import { useEffect, useId, type ReactNode } from "react";
+import CloseIcon from "../icons/CloseIcon";
 
 type ModalProps = {
   title: string;
@@ -42,9 +43,7 @@ function Modal({ title, onClose, children }: ModalProps) {
             onClick={onClose}
             className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[#718078] transition hover:bg-[#F1F6F2] hover:text-[#405348]"
           >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M6 6l12 12M18 6L6 18" />
-            </svg>
+            <CloseIcon />
           </button>
         </div>
 
