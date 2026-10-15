@@ -13,6 +13,7 @@ import RoleBadge from "../../../components/projects/RoleBadge";
 import Button from "../../../components/ui/Button";
 import ConfirmDialog from "../../../components/ui/ConfirmDialog";
 import MetricCard from "../../../components/ui/MetricCard";
+import { useToast } from "../../../components/ui/toastContext";
 import { useNotifications } from "../../../hooks/notificationsContext";
 import { formatUserName } from "../../../lib/currentUser";
 import { formatDate } from "../../../lib/dateFormat";
@@ -52,6 +53,7 @@ function ProjectDetailPage() {
   const [showInvite, setShowInvite] = useState(false);
 
   const { notifications, changeVersion } = useNotifications();
+  const { showToast } = useToast();
 
   useEffect(() => {
     let cancelled = false;
@@ -157,7 +159,10 @@ function ProjectDetailPage() {
   async function handleUpdate(name: string) {
     const result = await updateProject(projectId, name);
 
-    if (result.ok) setProject(result.data);
+    if (result.ok) {
+      setProject(result.data);
+      showToast({ type: "success", message: "Project updated successfully" });
+    }
 
     return result;
   }
@@ -175,6 +180,7 @@ function ProjectDetailPage() {
       return;
     }
 
+    showToast({ type: "success", message: "Project deleted successfully" });
     navigate("/projects");
   }
 
@@ -184,8 +190,12 @@ function ProjectDetailPage() {
 
     const result = await removeMembership(projectId, membership.id);
 
-    if (result.ok) await loadMemberships();
-    else setActionError(result.error);
+    if (result.ok) {
+      await loadMemberships();
+      showToast({ type: "success", message: "Collaborator removed" });
+    } else {
+      setActionError(result.error);
+    }
 
     setRemovingId(null);
     setConfirmRemove(null);
@@ -194,7 +204,12 @@ function ProjectDetailPage() {
   async function handleInvite(email: string) {
     const result = await createInvitation(projectId, email);
 
-    if (result.ok) await loadInvitations();
+    if (result.ok) {
+      await loadInvitations();
+      showToast({ type: "success", message: "Invitation sent successfully" });
+    } else {
+      showToast({ type: "error", message: result.error });
+    }
 
     return result;
   }
@@ -205,8 +220,12 @@ function ProjectDetailPage() {
 
     const result = await cancelInvitation(projectId, invitation.id);
 
-    if (result.ok) await loadInvitations();
-    else setActionError(result.error);
+    if (result.ok) {
+      await loadInvitations();
+      showToast({ type: "success", message: "Invitation cancelled" });
+    } else {
+      setActionError(result.error);
+    }
 
     setCancellingId(null);
   }

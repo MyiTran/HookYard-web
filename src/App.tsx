@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet, Route, Routes, useOutletContext } from "react-router-dom";
 import NotificationsProvider from "./components/notifications/NotificationsProvider";
+import ToastProvider from "./components/ui/ToastProvider";
 import { API_URL } from "./config";
 import { toCurrentUser } from "./lib/currentUser";
 import AdminDashboardPage from "./pages/admin/dashboard/DashboardPage";
@@ -84,9 +85,11 @@ function PrivateRoute() {
   }
 
   return (
-    <NotificationsProvider>
-      <Outlet context={toCurrentUser(profile)} />
-    </NotificationsProvider>
+    <ToastProvider>
+      <NotificationsProvider>
+        <Outlet context={toCurrentUser(profile)} />
+      </NotificationsProvider>
+    </ToastProvider>
   );
 }
 

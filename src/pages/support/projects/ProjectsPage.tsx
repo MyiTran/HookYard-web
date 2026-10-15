@@ -6,6 +6,7 @@ import ProjectCard, { PROJECT_ROW_GRID_COLS } from "../../../components/projects
 import ProjectFilterBar, { type ProjectFilters } from "../../../components/projects/ProjectFilterBar";
 import ProjectFormModal from "../../../components/projects/ProjectFormModal";
 import Button from "../../../components/ui/Button";
+import { useToast } from "../../../components/ui/toastContext";
 import { useNotifications } from "../../../hooks/notificationsContext";
 import {
   acceptInvitation,
@@ -46,6 +47,7 @@ function ProjectsPage() {
   const [showCreate, setShowCreate] = useState(false);
 
   const { changeVersion, reloadNotifications } = useNotifications();
+  const { showToast } = useToast();
 
   const loadInvitations = useCallback(async () => {
     const result = await listMyInvitations();
@@ -103,7 +105,10 @@ function ProjectsPage() {
   async function handleCreate(name: string) {
     const result = await createProject(name);
 
-    if (result.ok) setReloadToken((token) => token + 1);
+    if (result.ok) {
+      setReloadToken((token) => token + 1);
+      showToast({ type: "success", message: "Project created successfully" });
+    }
 
     return result;
   }
@@ -122,6 +127,10 @@ function ProjectsPage() {
     }
 
     await reloadNotifications();
+    showToast({
+      type: "success",
+      message: action === "accept" ? "Invitation accepted" : "Invitation declined",
+    });
     setProcessingId(null);
   }
 
