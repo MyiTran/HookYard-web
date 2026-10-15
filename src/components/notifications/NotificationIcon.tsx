@@ -1,6 +1,6 @@
 import type { NotificationKind } from "../../types/notification";
-import FailedDeliveryIcon from "../icons/FailedDeliveryIcon";
-import SuccessIcon from "../icons/SuccessIcon";
+import AlertTriangleIcon from "../icons/AlertTriangleIcon";
+import CheckCircleIcon from "../icons/CheckCircleIcon";
 import UsersIcon from "../icons/UsersIcon";
 
 type NotificationIconProps = { kind: NotificationKind };
@@ -11,10 +11,10 @@ const TONE_STYLES: Record<NotificationKind, string> = {
   project_invitation_declined: "bg-[#FBF1E4] text-[#9A6B1F]",
 };
 
-const ICONS: Record<NotificationKind, typeof SuccessIcon> = {
+const ICONS: Record<NotificationKind, typeof CheckCircleIcon> = {
   project_invitation_received: UsersIcon,
-  project_invitation_accepted: SuccessIcon,
-  project_invitation_declined: FailedDeliveryIcon,
+  project_invitation_accepted: CheckCircleIcon,
+  project_invitation_declined: AlertTriangleIcon,
 };
 
 function NotificationIcon({ kind }: NotificationIconProps) {

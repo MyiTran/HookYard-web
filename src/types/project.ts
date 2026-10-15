@@ -38,4 +38,3 @@ export type ProjectInvitation = {
   invited_by: InvitedUserSummary;
   recipient: InvitedUserSummary;
 };
-
