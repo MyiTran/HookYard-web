@@ -5,6 +5,7 @@ import AlertTriangleIcon from "../../../components/icons/AlertTriangleIcon";
 import BoltIcon from "../../../components/icons/BoltIcon";
 import CheckCircleIcon from "../../../components/icons/CheckCircleIcon";
 import PlugIcon from "../../../components/icons/PlugIcon";
+import ProjectEndpointsPanel from "../../../components/endpoints/ProjectEndpointsPanel";
 import CollaboratorsList from "../../../components/projects/CollaboratorsList";
 import InviteCollaboratorModal from "../../../components/projects/InviteCollaboratorModal";
 import PendingInvitationsList from "../../../components/projects/PendingInvitationsList";
@@ -16,7 +17,7 @@ import MetricCard from "../../../components/ui/MetricCard";
 import { useToast } from "../../../components/ui/toastContext";
 import { useNotifications } from "../../../hooks/notificationsContext";
 import { formatUserName } from "../../../lib/currentUser";
-import { formatDate } from "../../../lib/dateFormat";
+import { formatDateTime } from "../../../lib/dateFormat";
 import {
   cancelInvitation,
   createInvitation,
@@ -297,12 +298,12 @@ function ProjectDetailPage() {
           <dl className="mt-3 flex flex-wrap gap-x-12 gap-y-3">
             <div>
               <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Created</dt>
-              <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{formatDate(project.created_at)}</dd>
+              <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{formatDateTime(project.created_at)}</dd>
             </div>
 
             <div>
               <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Updated</dt>
-              <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{formatDate(project.updated_at)}</dd>
+              <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{formatDateTime(project.updated_at)}</dd>
             </div>
 
             <div>
@@ -320,14 +321,7 @@ function ProjectDetailPage() {
         </section>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
-          <section className="rounded-[18px] border border-[#D8E3DB] bg-white p-5 shadow-[0_8px_30px_rgba(32,78,53,0.05)] lg:col-span-2">
-            <h2 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Endpoints</h2>
-
-            <div className="mt-3 rounded-[14px] border border-dashed border-[#D8E3DB] px-5 py-8 text-center">
-              <p className="text-2xl font-semibold tracking-tight text-[#9AA79F]">—</p>
-              <p className="mt-1 text-xs font-medium text-[#8A9990]">Endpoint data is not available yet.</p>
-            </div>
-          </section>
+          <ProjectEndpointsPanel project={project} />
 
           <section className="rounded-[18px] border border-[#D8E3DB] bg-white p-5 shadow-[0_8px_30px_rgba(32,78,53,0.05)]">
             <div>

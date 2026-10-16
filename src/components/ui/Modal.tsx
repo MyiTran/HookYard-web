@@ -5,9 +5,13 @@ type ModalProps = {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  footer?: ReactNode;
 };
 
-function Modal({ title, onClose, children }: ModalProps) {
+const SCROLL_CLASS =
+  "min-h-0 flex-1 overflow-y-auto px-6 pb-6 sm:px-7 [scrollbar-width:thin] [scrollbar-color:#C2D4C7_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#C2D4C7] [&::-webkit-scrollbar-track]:bg-transparent";
+
+function Modal({ title, onClose, children, footer }: ModalProps) {
   const titleId = useId();
 
   useEffect(() => {
@@ -30,9 +34,9 @@ function Modal({ title, onClose, children }: ModalProps) {
         aria-modal="true"
         aria-labelledby={titleId}
         onMouseDown={(event) => event.stopPropagation()}
-        className="w-full max-w-md rounded-[22px] border border-[#D8E3DB] bg-white p-6 shadow-[0_24px_70px_rgba(23,33,27,0.25)] sm:p-7"
+        className="flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-[22px] border border-[#D8E3DB] bg-white shadow-[0_24px_70px_rgba(23,33,27,0.25)]"
       >
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex shrink-0 items-start justify-between gap-4 px-6 pb-4 pt-6 sm:px-7 sm:pt-7">
           <h2 id={titleId} className="text-lg font-semibold tracking-tight">
             {title}
           </h2>
@@ -47,7 +51,11 @@ function Modal({ title, onClose, children }: ModalProps) {
           </button>
         </div>
 
-        <div className="mt-5">{children}</div>
+        <div className={SCROLL_CLASS}>{children}</div>
+
+        {footer && (
+          <div className="shrink-0 border-t border-[#E4EBE6] px-6 py-4 sm:px-7">{footer}</div>
+        )}
       </div>
     </div>
   );
