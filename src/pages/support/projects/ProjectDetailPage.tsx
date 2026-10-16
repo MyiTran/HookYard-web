@@ -5,6 +5,7 @@ import AlertTriangleIcon from "../../../components/icons/AlertTriangleIcon";
 import BoltIcon from "../../../components/icons/BoltIcon";
 import CheckCircleIcon from "../../../components/icons/CheckCircleIcon";
 import PlugIcon from "../../../components/icons/PlugIcon";
+import ProjectEndpointsPanel from "../../../components/endpoints/ProjectEndpointsPanel";
 import CollaboratorsList from "../../../components/projects/CollaboratorsList";
 import InviteCollaboratorModal from "../../../components/projects/InviteCollaboratorModal";
 import PendingInvitationsList from "../../../components/projects/PendingInvitationsList";
@@ -13,8 +14,10 @@ import RoleBadge from "../../../components/projects/RoleBadge";
 import Button from "../../../components/ui/Button";
 import ConfirmDialog from "../../../components/ui/ConfirmDialog";
 import MetricCard from "../../../components/ui/MetricCard";
+import { useToast } from "../../../components/ui/toastContext";
+import { useNotifications } from "../../../hooks/notificationsContext";
 import { formatUserName } from "../../../lib/currentUser";
-import { formatDate } from "../../../lib/dateFormat";
+import { formatDateTime } from "../../../lib/dateFormat";
 import {
   cancelInvitation,
   createInvitation,
@@ -49,6 +52,9 @@ function ProjectDetailPage() {
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
+
+  const { notifications, changeVersion } = useNotifications();
+  const { showToast } = useToast();
 
   useEffect(() => {
     let cancelled = false;
@@ -93,6 +99,40 @@ function ProjectDetailPage() {
     };
   }, [projectId]);
 
+  useEffect(() => {
+    if (changeVersion === 0) return;
+
+    const hasRelevantChange = notifications.some(
+      (notification) =>
+        notification.project_id === projectId &&
+        notification.read_at === null &&
+        (notification.kind === "project_invitation_accepted" ||
+          notification.kind === "project_invitation_declined"),
+    );
+
+    if (!hasRelevantChange) return;
+
+    let cancelled = false;
+
+    async function refresh() {
+      const [membershipsResult, invitationsResult] = await Promise.all([
+        listMemberships(projectId),
+        listProjectInvitations(projectId),
+      ]);
+
+      if (cancelled) return;
+
+      if (membershipsResult.ok) setMemberships(membershipsResult.data);
+      if (invitationsResult.ok) setInvitations(invitationsResult.data);
+    }
+
+    refresh();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [changeVersion, notifications, projectId]);
+
   async function loadMemberships() {
     const result = await listMemberships(projectId);
 
@@ -120,7 +160,10 @@ function ProjectDetailPage() {
   async function handleUpdate(name: string) {
     const result = await updateProject(projectId, name);
 
-    if (result.ok) setProject(result.data);
+    if (result.ok) {
+      setProject(result.data);
+      showToast({ type: "success", message: "Project updated successfully" });
+    }
 
     return result;
   }
@@ -138,6 +181,7 @@ function ProjectDetailPage() {
       return;
     }
 
+    showToast({ type: "success", message: "Project deleted successfully" });
     navigate("/projects");
   }
 
@@ -147,8 +191,12 @@ function ProjectDetailPage() {
 
     const result = await removeMembership(projectId, membership.id);
 
-    if (result.ok) await loadMemberships();
-    else setActionError(result.error);
+    if (result.ok) {
+      await loadMemberships();
+      showToast({ type: "success", message: "Collaborator removed" });
+    } else {
+      setActionError(result.error);
+    }
 
     setRemovingId(null);
     setConfirmRemove(null);
@@ -157,7 +205,12 @@ function ProjectDetailPage() {
   async function handleInvite(email: string) {
     const result = await createInvitation(projectId, email);
 
-    if (result.ok) await loadInvitations();
+    if (result.ok) {
+      await loadInvitations();
+      showToast({ type: "success", message: "Invitation sent successfully" });
+    } else {
+      showToast({ type: "error", message: result.error });
+    }
 
     return result;
   }
@@ -168,8 +221,12 @@ function ProjectDetailPage() {
 
     const result = await cancelInvitation(projectId, invitation.id);
 
-    if (result.ok) await loadInvitations();
-    else setActionError(result.error);
+    if (result.ok) {
+      await loadInvitations();
+      showToast({ type: "success", message: "Invitation cancelled" });
+    } else {
+      setActionError(result.error);
+    }
 
     setCancellingId(null);
   }
@@ -241,12 +298,12 @@ function ProjectDetailPage() {
           <dl className="mt-3 flex flex-wrap gap-x-12 gap-y-3">
             <div>
               <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Created</dt>
-              <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{formatDate(project.created_at)}</dd>
+              <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{formatDateTime(project.created_at)}</dd>
             </div>
 
             <div>
               <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Updated</dt>
-              <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{formatDate(project.updated_at)}</dd>
+              <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{formatDateTime(project.updated_at)}</dd>
             </div>
 
             <div>
@@ -264,14 +321,7 @@ function ProjectDetailPage() {
         </section>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
-          <section className="rounded-[18px] border border-[#D8E3DB] bg-white p-5 shadow-[0_8px_30px_rgba(32,78,53,0.05)] lg:col-span-2">
-            <h2 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Endpoints</h2>
-
-            <div className="mt-3 rounded-[14px] border border-dashed border-[#D8E3DB] px-5 py-8 text-center">
-              <p className="text-2xl font-semibold tracking-tight text-[#9AA79F]">—</p>
-              <p className="mt-1 text-xs font-medium text-[#8A9990]">Endpoint data is not available yet.</p>
-            </div>
-          </section>
+          <ProjectEndpointsPanel project={project} />
 
           <section className="rounded-[18px] border border-[#D8E3DB] bg-white p-5 shadow-[0_8px_30px_rgba(32,78,53,0.05)]">
             <div>

@@ -1,4 +1,5 @@
 import { API_URL } from "../config";
+import type { Paginated } from "../types/pagination";
 import { formatApiError } from "./apiError";
 
 export type ApiResult<T> =
@@ -48,4 +49,8 @@ export async function apiRequestCollection<T>(path: string): Promise<ApiResult<T
   const result = await apiRequest<{ data: T[] }>(path, "GET");
 
   return result.ok ? { ok: true, data: result.data.data } : result;
+}
+
+export function apiRequestPage<T>(path: string): Promise<ApiResult<Paginated<T>>> {
+  return apiRequest<Paginated<T>>(path, "GET");
 }

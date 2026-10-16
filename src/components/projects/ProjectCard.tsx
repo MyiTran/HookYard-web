@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import ChevronRightIcon from "../icons/ChevronRightIcon";
-import { formatDate } from "../../lib/dateFormat";
+import { formatDateTime } from "../../lib/dateFormat";
 import type { Project } from "../../types/project";
 import RoleBadge from "./RoleBadge";
 
@@ -59,7 +59,7 @@ function ProjectCard({ project }: ProjectCardProps) {
 
       <div className="whitespace-nowrap text-xs font-medium text-[#8A9990]">
         <span className="lg:hidden">Created </span>
-        {formatDate(project.created_at)}
+        {formatDateTime(project.created_at)}
       </div>
 
       <div className="flex justify-end">

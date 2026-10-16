@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet, Route, Routes, useOutletContext } from "react-router-dom";
+import NotificationsProvider from "./components/notifications/NotificationsProvider";
+import ToastProvider from "./components/ui/ToastProvider";
 import { API_URL } from "./config";
 import { toCurrentUser } from "./lib/currentUser";
 import AdminDashboardPage from "./pages/admin/dashboard/DashboardPage";
@@ -9,6 +11,8 @@ import LoginPage from "./pages/auth/LoginPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import SignupPage from "./pages/auth/SignupPage";
 import SupportDashboardPage from "./pages/support/dashboard/DashboardPage";
+import EndpointDetailPage from "./pages/support/endpoints/EndpointDetailPage";
+import EndpointsPage from "./pages/support/endpoints/EndpointsPage";
 import ProjectDetailPage from "./pages/support/projects/ProjectDetailPage";
 import ProjectsPage from "./pages/support/projects/ProjectsPage";
 import type { CurrentUser, UserProfile } from "./types/user";
@@ -82,7 +86,13 @@ function PrivateRoute() {
     return <Navigate to="/users/sign_in" replace />;
   }
 
-  return <Outlet context={toCurrentUser(profile)} />;
+  return (
+    <ToastProvider>
+      <NotificationsProvider>
+        <Outlet context={toCurrentUser(profile)} />
+      </NotificationsProvider>
+    </ToastProvider>
+  );
 }
 
 // UX-only guard: the backend remains the real authorization boundary.
@@ -109,6 +119,8 @@ function App() {
         <Route path="/" element={<SupportDashboardPage />} />
         <Route path="/projects" element={<ProjectsPage />} />
         <Route path="/projects/:id" element={<ProjectDetailPage />} />
+        <Route path="/endpoints" element={<EndpointsPage />} />
+        <Route path="/projects/:projectId/endpoints/:endpointId" element={<EndpointDetailPage />} />
         <Route path="/admin" element={<AdminRoute />} />
       </Route>
 
