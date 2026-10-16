@@ -1,22 +1,27 @@
 import type { Project, ProjectInvitation, ProjectMembership, ProjectMembershipRole } from "../types/project";
-import { apiRequest, apiRequestCollection, type ApiResult } from "./apiRequest";
+import type { Paginated } from "../types/pagination";
+import { apiRequest, apiRequestCollection, apiRequestPage, type ApiResult } from "./apiRequest";
 
 export type ProjectQueryParams = {
   search?: string;
   role?: ProjectMembershipRole;
   order?: "created_desc" | "created_asc" | "name_asc";
+  page?: number;
+  perPage?: number;
 };
 
-export function getProjects(params: ProjectQueryParams = {}): Promise<ApiResult<Project[]>> {
+export function getProjects(params: ProjectQueryParams = {}): Promise<ApiResult<Paginated<Project>>> {
   const query = new URLSearchParams();
 
   if (params.search) query.set("search", params.search);
   if (params.role) query.set("role", params.role);
   if (params.order) query.set("order", params.order);
+  if (params.page && params.page > 1) query.set("page[number]", String(params.page));
+  if (params.perPage) query.set("page[size]", String(params.perPage));
 
   const suffix = query.toString();
 
-  return apiRequestCollection<Project>(`/projects${suffix ? `?${suffix}` : ""}`);
+  return apiRequestPage<Project>(`/projects${suffix ? `?${suffix}` : ""}`);
 }
 
 export function createProject(name: string): Promise<ApiResult<Project>> {

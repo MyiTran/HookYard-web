@@ -6,6 +6,7 @@ import ProjectCard, { PROJECT_ROW_GRID_COLS } from "../../../components/projects
 import ProjectFilterBar, { type ProjectFilters } from "../../../components/projects/ProjectFilterBar";
 import ProjectFormModal from "../../../components/projects/ProjectFormModal";
 import Button from "../../../components/ui/Button";
+import Pagination from "../../../components/ui/Pagination";
 import { useToast } from "../../../components/ui/toastContext";
 import { useNotifications } from "../../../hooks/notificationsContext";
 import {
@@ -16,6 +17,7 @@ import {
   listMyInvitations,
   type ProjectQueryParams,
 } from "../../../lib/projectApi";
+import type { PaginationMeta } from "../../../types/pagination";
 import type { Project, ProjectInvitation } from "../../../types/project";
 import type { CurrentUser } from "../../../types/user";
 
@@ -25,17 +27,20 @@ const DEFAULT_PROJECT_FILTERS: ProjectFilters = {
   sort: "created_desc",
 };
 
-function toProjectQuery(filters: ProjectFilters): ProjectQueryParams {
+function toProjectQuery(filters: ProjectFilters, page: number): ProjectQueryParams {
   return {
     search: filters.search || undefined,
     role: filters.role === "all" ? undefined : filters.role,
     order: filters.sort,
+    page,
   };
 }
 
 function ProjectsPage() {
   const user = useOutletContext<CurrentUser>();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [meta, setMeta] = useState<PaginationMeta | null>(null);
+  const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<ProjectFilters>(DEFAULT_PROJECT_FILTERS);
   const [searchDraft, setSearchDraft] = useState("");
   const [reloadToken, setReloadToken] = useState(0);
@@ -59,12 +64,13 @@ function ProjectsPage() {
     let cancelled = false;
 
     async function load() {
-      const result = await getProjects(toProjectQuery(filters));
+      const result = await getProjects(toProjectQuery(filters, page));
 
       if (cancelled) return;
 
       if (result.ok) {
-        setProjects(result.data);
+        setProjects(result.data.data);
+        setMeta(result.data.meta);
         setError("");
       } else {
         setError(result.error);
@@ -78,7 +84,7 @@ function ProjectsPage() {
     return () => {
       cancelled = true;
     };
-  }, [filters, reloadToken, changeVersion]);
+  }, [filters, page, reloadToken, changeVersion]);
 
   useEffect(() => {
     let cancelled = false;
@@ -99,7 +105,13 @@ function ProjectsPage() {
   function applyFilters(next: ProjectFilters) {
     setLoading(true);
     setError("");
+    setPage(1);
     setFilters(next);
+  }
+
+  function handlePageChange(nextPage: number) {
+    setLoading(true);
+    setPage(nextPage);
   }
 
   async function handleCreate(name: string) {
@@ -238,6 +250,18 @@ function ProjectsPage() {
                     <ProjectCard key={project.id} project={project} />
                   ))}
                 </div>
+              </div>
+            )}
+
+            {!loading && (
+              <div className="mt-4">
+                <Pagination
+                  page={page}
+                  totalPages={meta?.last_page ?? 1}
+                  totalCount={meta?.total_count ?? projects.length}
+                  pageSize={meta?.page_size ?? projects.length}
+                  onPageChange={handlePageChange}
+                />
               </div>
             )}
           </>
