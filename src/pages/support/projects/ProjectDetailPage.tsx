@@ -13,6 +13,8 @@ import RoleBadge from "../../../components/projects/RoleBadge";
 import Button from "../../../components/ui/Button";
 import ConfirmDialog from "../../../components/ui/ConfirmDialog";
 import MetricCard from "../../../components/ui/MetricCard";
+import { useToast } from "../../../components/ui/toastContext";
+import { useNotifications } from "../../../hooks/notificationsContext";
 import { formatUserName } from "../../../lib/currentUser";
 import { formatDate } from "../../../lib/dateFormat";
 import {
@@ -49,6 +51,9 @@ function ProjectDetailPage() {
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
+
+  const { notifications, changeVersion } = useNotifications();
+  const { showToast } = useToast();
 
   useEffect(() => {
     let cancelled = false;
@@ -93,6 +98,40 @@ function ProjectDetailPage() {
     };
   }, [projectId]);
 
+  useEffect(() => {
+    if (changeVersion === 0) return;
+
+    const hasRelevantChange = notifications.some(
+      (notification) =>
+        notification.project_id === projectId &&
+        notification.read_at === null &&
+        (notification.kind === "project_invitation_accepted" ||
+          notification.kind === "project_invitation_declined"),
+    );
+
+    if (!hasRelevantChange) return;
+
+    let cancelled = false;
+
+    async function refresh() {
+      const [membershipsResult, invitationsResult] = await Promise.all([
+        listMemberships(projectId),
+        listProjectInvitations(projectId),
+      ]);
+
+      if (cancelled) return;
+
+      if (membershipsResult.ok) setMemberships(membershipsResult.data);
+      if (invitationsResult.ok) setInvitations(invitationsResult.data);
+    }
+
+    refresh();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [changeVersion, notifications, projectId]);
+
   async function loadMemberships() {
     const result = await listMemberships(projectId);
 
@@ -120,7 +159,10 @@ function ProjectDetailPage() {
   async function handleUpdate(name: string) {
     const result = await updateProject(projectId, name);
 
-    if (result.ok) setProject(result.data);
+    if (result.ok) {
+      setProject(result.data);
+      showToast({ type: "success", message: "Project updated successfully" });
+    }
 
     return result;
   }
@@ -138,6 +180,7 @@ function ProjectDetailPage() {
       return;
     }
 
+    showToast({ type: "success", message: "Project deleted successfully" });
     navigate("/projects");
   }
 
@@ -147,8 +190,12 @@ function ProjectDetailPage() {
 
     const result = await removeMembership(projectId, membership.id);
 
-    if (result.ok) await loadMemberships();
-    else setActionError(result.error);
+    if (result.ok) {
+      await loadMemberships();
+      showToast({ type: "success", message: "Collaborator removed" });
+    } else {
+      setActionError(result.error);
+    }
 
     setRemovingId(null);
     setConfirmRemove(null);
@@ -157,7 +204,12 @@ function ProjectDetailPage() {
   async function handleInvite(email: string) {
     const result = await createInvitation(projectId, email);
 
-    if (result.ok) await loadInvitations();
+    if (result.ok) {
+      await loadInvitations();
+      showToast({ type: "success", message: "Invitation sent successfully" });
+    } else {
+      showToast({ type: "error", message: result.error });
+    }
 
     return result;
   }
@@ -168,8 +220,12 @@ function ProjectDetailPage() {
 
     const result = await cancelInvitation(projectId, invitation.id);
 
-    if (result.ok) await loadInvitations();
-    else setActionError(result.error);
+    if (result.ok) {
+      await loadInvitations();
+      showToast({ type: "success", message: "Invitation cancelled" });
+    } else {
+      setActionError(result.error);
+    }
 
     setCancellingId(null);
   }

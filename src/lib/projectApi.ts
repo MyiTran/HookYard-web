@@ -62,3 +62,7 @@ export function listMyInvitations(): Promise<ApiResult<ProjectInvitation[]>> {
 export function acceptInvitation(id: string): Promise<ApiResult<ProjectInvitation>> {
   return apiRequest<ProjectInvitation>(`/invitations/${id}/accept`, "PATCH");
 }
+
+export function declineInvitation(id: string): Promise<ApiResult<ProjectInvitation>> {
+  return apiRequest<ProjectInvitation>(`/invitations/${id}/decline`, "PATCH");
+}

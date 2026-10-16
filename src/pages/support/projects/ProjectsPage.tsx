@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
 import MyInvitationsList from "../../../components/projects/MyInvitationsList";
@@ -6,9 +6,12 @@ import ProjectCard, { PROJECT_ROW_GRID_COLS } from "../../../components/projects
 import ProjectFilterBar, { type ProjectFilters } from "../../../components/projects/ProjectFilterBar";
 import ProjectFormModal from "../../../components/projects/ProjectFormModal";
 import Button from "../../../components/ui/Button";
+import { useToast } from "../../../components/ui/toastContext";
+import { useNotifications } from "../../../hooks/notificationsContext";
 import {
   acceptInvitation,
   createProject,
+  declineInvitation,
   getProjects,
   listMyInvitations,
   type ProjectQueryParams,
@@ -33,15 +36,24 @@ function toProjectQuery(filters: ProjectFilters): ProjectQueryParams {
 function ProjectsPage() {
   const user = useOutletContext<CurrentUser>();
   const [projects, setProjects] = useState<Project[]>([]);
-  const [invitations, setInvitations] = useState<ProjectInvitation[]>([]);
   const [filters, setFilters] = useState<ProjectFilters>(DEFAULT_PROJECT_FILTERS);
   const [searchDraft, setSearchDraft] = useState("");
   const [reloadToken, setReloadToken] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [inviteError, setInviteError] = useState("");
-  const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [invitations, setInvitations] = useState<ProjectInvitation[]>([]);
   const [showCreate, setShowCreate] = useState(false);
+
+  const { changeVersion, reloadNotifications } = useNotifications();
+  const { showToast } = useToast();
+
+  const loadInvitations = useCallback(async () => {
+    const result = await listMyInvitations();
+
+    if (result.ok) setInvitations(result.data);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -66,15 +78,15 @@ function ProjectsPage() {
     return () => {
       cancelled = true;
     };
-  }, [filters, reloadToken]);
+  }, [filters, reloadToken, changeVersion]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
-      const result = await listMyInvitations();
+      await loadInvitations();
 
-      if (!cancelled && result.ok) setInvitations(result.data);
+      if (cancelled) return;
     }
 
     load();
@@ -82,7 +94,7 @@ function ProjectsPage() {
     return () => {
       cancelled = true;
     };
-  }, [reloadToken]);
+  }, [changeVersion, loadInvitations]);
 
   function applyFilters(next: ProjectFilters) {
     setLoading(true);
@@ -93,25 +105,33 @@ function ProjectsPage() {
   async function handleCreate(name: string) {
     const result = await createProject(name);
 
-    if (result.ok) setReloadToken((token) => token + 1);
+    if (result.ok) {
+      setReloadToken((token) => token + 1);
+      showToast({ type: "success", message: "Project created successfully" });
+    }
 
     return result;
   }
 
-  async function handleAccept(invitation: ProjectInvitation) {
+  async function handleInvitationAction(invitation: ProjectInvitation, action: "accept" | "decline") {
     setInviteError("");
-    setAcceptingId(invitation.id);
+    setProcessingId(invitation.id);
 
-    const result = await acceptInvitation(invitation.id);
+    const result =
+      action === "accept" ? await acceptInvitation(invitation.id) : await declineInvitation(invitation.id);
 
     if (!result.ok) {
       setInviteError(result.error);
-      setAcceptingId(null);
+      setProcessingId(null);
       return;
     }
 
-    setReloadToken((token) => token + 1);
-    setAcceptingId(null);
+    await reloadNotifications();
+    showToast({
+      type: "success",
+      message: action === "accept" ? "Invitation accepted" : "Invitation declined",
+    });
+    setProcessingId(null);
   }
 
   function handleSearchSubmit() {
@@ -153,7 +173,11 @@ function ProjectsPage() {
           )}
 
           <div className="mt-3">
-            <MyInvitationsList invitations={invitations} acceptingId={acceptingId} onAccept={handleAccept} />
+            <MyInvitationsList
+              invitations={invitations}
+              processingId={processingId}
+              onInvitationAction={handleInvitationAction}
+            />
           </div>
         </section>
       )}

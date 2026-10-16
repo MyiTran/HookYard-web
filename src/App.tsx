@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet, Route, Routes, useOutletContext } from "react-router-dom";
+import NotificationsProvider from "./components/notifications/NotificationsProvider";
+import ToastProvider from "./components/ui/ToastProvider";
 import { API_URL } from "./config";
 import { toCurrentUser } from "./lib/currentUser";
 import AdminDashboardPage from "./pages/admin/dashboard/DashboardPage";
@@ -82,7 +84,13 @@ function PrivateRoute() {
     return <Navigate to="/users/sign_in" replace />;
   }
 
-  return <Outlet context={toCurrentUser(profile)} />;
+  return (
+    <ToastProvider>
+      <NotificationsProvider>
+        <Outlet context={toCurrentUser(profile)} />
+      </NotificationsProvider>
+    </ToastProvider>
+  );
 }
 
 // UX-only guard: the backend remains the real authorization boundary.
