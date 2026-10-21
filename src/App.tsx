@@ -11,6 +11,8 @@ import LoginPage from "./pages/auth/LoginPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import SignupPage from "./pages/auth/SignupPage";
 import SupportDashboardPage from "./pages/support/dashboard/DashboardPage";
+import EndpointDetailPage from "./pages/support/endpoints/EndpointDetailPage";
+import EndpointsPage from "./pages/support/endpoints/EndpointsPage";
 import ProjectDetailPage from "./pages/support/projects/ProjectDetailPage";
 import ProjectsPage from "./pages/support/projects/ProjectsPage";
 import type { CurrentUser, UserProfile } from "./types/user";
@@ -117,6 +119,8 @@ function App() {
         <Route path="/" element={<SupportDashboardPage />} />
         <Route path="/projects" element={<ProjectsPage />} />
         <Route path="/projects/:id" element={<ProjectDetailPage />} />
+        <Route path="/endpoints" element={<EndpointsPage />} />
+        <Route path="/projects/:projectId/endpoints/:endpointId" element={<EndpointDetailPage />} />
         <Route path="/admin" element={<AdminRoute />} />
       </Route>
 

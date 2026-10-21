@@ -1,5 +1,5 @@
 import { formatUserName } from "../../lib/currentUser";
-import { formatDate } from "../../lib/dateFormat";
+import { formatDateTime } from "../../lib/dateFormat";
 import type { ProjectInvitation } from "../../types/project";
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";
@@ -26,7 +26,7 @@ function PendingInvitationsList({ invitations, cancellingId, onCancel }: Pending
                   Pending
                 </Badge>
               </div>
-              <p className="text-xs font-medium text-[#718078]">Invited {formatDate(invitation.created_at)}</p>
+              <p className="text-xs font-medium text-[#718078]">Invited {formatDateTime(invitation.created_at)}</p>
             </div>
 
             <div className="flex items-center gap-3">
