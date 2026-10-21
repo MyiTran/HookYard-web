@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import Brand from "../branding/Brand";
 import Button from "../ui/Button";
 import { API_URL } from "../../config";
+import { readNavValue } from "../../lib/navState";
 import type { CurrentUser } from "../../types/user";
 import MenuIcon from "./MenuIcon";
 
@@ -21,7 +22,8 @@ function Sidebar({ user }: SidebarProps) {
   const isAdmin = user.role === "admin";
   
   const location = useLocation();
-  const currentPath = location.pathname;
+  const section = readNavValue(location.state, "section");
+  const currentPath = section ? `/${section}` : location.pathname;
 
   const menuItems: MenuItem[] = isAdmin
     ? [

@@ -1,0 +1,120 @@
+import { Link } from "react-router-dom";
+import { formatDateTime } from "../../lib/dateFormat";
+import { formatDuration } from "../../lib/durationFormat";
+import type { GlobalDeliveryMessageSummary } from "../../types/delivery";
+import ChevronRightIcon from "../icons/ChevronRightIcon";
+import DeliveryStatusBadge from "./DeliveryStatusBadge";
+import HttpStatusBadge from "./HttpStatusBadge";
+
+type GlobalDeliveryRowProps = {
+  message: GlobalDeliveryMessageSummary;
+  backTo: string;
+};
+
+export const GLOBAL_DELIVERY_ROW_GRID_COLS =
+  "lg:grid-cols-[7rem_minmax(0,1.5fr)_minmax(0,1.3fr)_minmax(0,0.9fr)_8rem_4.5rem_minmax(0,8rem)_2rem]";
+
+const MOBILE_LABEL_CLASS = "text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990] lg:hidden";
+
+function attemptLabel(count: number): string {
+  return `${count} ${count === 1 ? "attempt" : "attempts"}`;
+}
+
+function GlobalDeliveryRow({ message, backTo }: GlobalDeliveryRowProps) {
+  return (
+    <Link
+      to={`/projects/${message.project.id}/endpoints/${message.endpoint.id}/deliveries/${message.id}`}
+      state={{
+        from: backTo,
+        fromLabel: "Deliveries",
+        section: "deliveries",
+        endpointFrom: backTo,
+        endpointFromLabel: "Deliveries",
+      }}
+      className={`group grid gap-x-4 gap-y-2 px-5 py-4 transition hover:bg-[#F7FAF8] sm:grid-cols-2 ${GLOBAL_DELIVERY_ROW_GRID_COLS} lg:items-center lg:py-4`}
+    >
+      <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-1">
+        <DeliveryStatusBadge status={message.status} />
+
+        <span className="ml-auto text-xs font-medium text-[#8A9990] lg:hidden">
+          {formatDateTime(message.created_at)}
+        </span>
+
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EFF5F1] text-[#23613F] lg:hidden">
+          <ChevronRightIcon />
+        </span>
+      </div>
+
+      <div className="min-w-0 sm:col-span-2 lg:col-span-1">
+        <p className="truncate text-sm font-semibold tracking-tight text-[#1F2A24]" title={message.event_type}>
+          {message.event_type}
+        </p>
+        <p className="mt-0.5 truncate font-mono text-[11px] text-[#8A9990]" title={message.webhook_id}>
+          {message.webhook_id}
+        </p>
+      </div>
+
+      <div className="min-w-0">
+        <p className={MOBILE_LABEL_CLASS}>Endpoint</p>
+        <p className="truncate text-sm font-medium text-[#1F2A24]" title={message.endpoint.name}>
+          {message.endpoint.name}
+        </p>
+        <p className="mt-0.5 truncate text-xs font-medium text-[#8A9990]" title={message.endpoint.url}>
+          {message.endpoint.url}
+        </p>
+      </div>
+
+      <div className="min-w-0">
+        <p className={MOBILE_LABEL_CLASS}>Project</p>
+        <p className="truncate text-sm font-medium text-[#405348]" title={message.project.name}>
+          {message.project.name}
+        </p>
+      </div>
+
+      <div className="min-w-0">
+        <p className={MOBILE_LABEL_CLASS}>Result</p>
+
+        {message.attempt_count === 0 ? (
+          <span className="text-xs font-medium text-[#8A9990]">No attempts yet</span>
+        ) : message.status === "delivering" && message.last_response_status === null && !message.last_error_type ? (
+          <span className="text-xs font-medium text-[#2563A8]">In progress</span>
+        ) : (
+          <HttpStatusBadge status={message.last_response_status} errorType={message.last_error_type} />
+        )}
+
+        {message.last_error_type && (
+          <p className="mt-1 truncate text-[11px] font-medium text-[#9A6B1F]" title={message.last_error_type}>
+            {message.last_error_type}
+          </p>
+        )}
+      </div>
+
+      <div>
+        <p className={MOBILE_LABEL_CLASS}>Attempts</p>
+        <p className="text-xs font-medium text-[#405348]">
+          {message.attempt_count === 0 ? "—" : attemptLabel(message.attempt_count)}
+        </p>
+        {message.last_duration_ms !== null && (
+          <p className="mt-0.5 text-[11px] font-medium text-[#8A9990]">{formatDuration(message.last_duration_ms)}</p>
+        )}
+      </div>
+
+      <div className="hidden lg:block">
+        <p className="whitespace-nowrap text-xs font-medium text-[#405348]">{formatDateTime(message.created_at)}</p>
+        {message.last_attempt_at && (
+          <p className="mt-0.5 whitespace-nowrap text-[11px] font-medium text-[#8A9990]">
+            Attempt {formatDateTime(message.last_attempt_at)}
+          </p>
+        )}
+      </div>
+
+      <div className="hidden justify-end lg:flex">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EFF5F1] text-[#23613F] transition group-hover:bg-[#214E35] group-hover:text-white">
+          <ChevronRightIcon />
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+export default GlobalDeliveryRow;

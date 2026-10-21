@@ -16,28 +16,13 @@ import { useToast } from "../../../components/ui/toastContext";
 import type { ApiResult } from "../../../lib/apiRequest";
 import { formatDateTime } from "../../../lib/dateFormat";
 import { archiveEndpoint, getEndpoint, rotateSigningSecret, updateEndpoint } from "../../../lib/endpointApi";
+import { readNavState } from "../../../lib/navState";
 import { getProject } from "../../../lib/projectApi";
 import type { Endpoint } from "../../../types/endpoint";
 import type { Project } from "../../../types/project";
 import type { CurrentUser } from "../../../types/user";
 
 const MASKED_SECRET = "••••••••••••••••";
-
-type EndpointNavState = {
-  from?: string;
-  fromLabel?: string;
-};
-
-function readNavState(state: unknown): EndpointNavState {
-  if (!state || typeof state !== "object") return {};
-
-  const record = state as Record<string, unknown>;
-
-  return {
-    from: typeof record.from === "string" ? record.from : undefined,
-    fromLabel: typeof record.fromLabel === "string" ? record.fromLabel : undefined,
-  };
-}
 
 function EndpointDetailPage() {
   const user = useOutletContext<CurrentUser>();
@@ -382,7 +367,12 @@ function EndpointDetailPage() {
           </section>
         </div>
 
-        <DeliveryActivityPanel />
+        <DeliveryActivityPanel
+          projectId={projectId}
+          endpointId={endpointId}
+          endpointName={endpoint.name}
+          origin={navState}
+        />
 
         {showEdit && project && (
           <EndpointFormModal
