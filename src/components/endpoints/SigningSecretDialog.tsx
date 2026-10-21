@@ -12,6 +12,7 @@ type SigningSecretDialogProps = {
 
 function SigningSecretDialog({ secret, onClose }: SigningSecretDialogProps) {
   const [copied, setCopied] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
 
   async function handleCopy() {
     try {
@@ -24,7 +25,7 @@ function SigningSecretDialog({ secret, onClose }: SigningSecretDialogProps) {
   }
 
   return (
-    <Modal title="Save your signing secret" onClose={onClose}>
+    <Modal title="Save your signing secret" onClose={onClose} dismissible={false}>
       <div className="flex items-start gap-3 rounded-xl bg-[#FBF1E4] px-4 py-3">
         <AlertTriangleIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#9A6B1F]" />
 
@@ -50,8 +51,19 @@ function SigningSecretDialog({ secret, onClose }: SigningSecretDialogProps) {
         If you lose it, rotate the signing secret to generate a new one.
       </p>
 
+      <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-[#D8E3DB] px-4 py-3">
+        <input
+          type="checkbox"
+          checked={confirmed}
+          onChange={(event) => setConfirmed(event.target.checked)}
+          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[#214E35]"
+        />
+
+        <span className="text-sm font-medium text-[#1F2A24]">{"I've saved this signing secret"}</span>
+      </label>
+
       <div className="mt-6 flex justify-end">
-        <Button variant="primary" size="lg" onClick={onClose}>
+        <Button variant="primary" size="lg" disabled={!confirmed} onClick={onClose}>
           Done
         </Button>
       </div>

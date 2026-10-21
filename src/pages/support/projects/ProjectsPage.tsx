@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useSearchParams } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
 import MyInvitationsList from "../../../components/projects/MyInvitationsList";
 import ProjectCard, { PROJECT_ROW_GRID_COLS } from "../../../components/projects/ProjectCard";
-import ProjectFilterBar, { type ProjectFilters } from "../../../components/projects/ProjectFilterBar";
+import ProjectFilterBar, {
+  type ProjectFilters,
+  type ProjectRoleFilter,
+  type ProjectSortOption,
+} from "../../../components/projects/ProjectFilterBar";
 import ProjectFormModal from "../../../components/projects/ProjectFormModal";
 import Button from "../../../components/ui/Button";
 import Pagination from "../../../components/ui/Pagination";
@@ -17,6 +21,7 @@ import {
   listMyInvitations,
   type ProjectQueryParams,
 } from "../../../lib/projectApi";
+import { readPageParam, setSearchParam } from "../../../lib/searchParams";
 import type { PaginationMeta } from "../../../types/pagination";
 import type { Project, ProjectInvitation } from "../../../types/project";
 import type { CurrentUser } from "../../../types/user";
@@ -26,6 +31,21 @@ const DEFAULT_PROJECT_FILTERS: ProjectFilters = {
   role: "all",
   sort: "created_desc",
 };
+
+const ROLE_VALUES: ProjectRoleFilter[] = ["all", "owner", "maintainer"];
+const SORT_VALUES: ProjectSortOption[] = ["created_desc", "created_asc", "name_asc"];
+
+function readRole(value: string | null): ProjectRoleFilter {
+  return ROLE_VALUES.includes(value as ProjectRoleFilter)
+    ? (value as ProjectRoleFilter)
+    : DEFAULT_PROJECT_FILTERS.role;
+}
+
+function readSort(value: string | null): ProjectSortOption {
+  return SORT_VALUES.includes(value as ProjectSortOption)
+    ? (value as ProjectSortOption)
+    : DEFAULT_PROJECT_FILTERS.sort;
+}
 
 function toProjectQuery(filters: ProjectFilters, page: number): ProjectQueryParams {
   return {
@@ -38,11 +58,9 @@ function toProjectQuery(filters: ProjectFilters, page: number): ProjectQueryPara
 
 function ProjectsPage() {
   const user = useOutletContext<CurrentUser>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [projects, setProjects] = useState<Project[]>([]);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
-  const [page, setPage] = useState(1);
-  const [filters, setFilters] = useState<ProjectFilters>(DEFAULT_PROJECT_FILTERS);
-  const [searchDraft, setSearchDraft] = useState("");
   const [reloadToken, setReloadToken] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -50,6 +68,21 @@ function ProjectsPage() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [invitations, setInvitations] = useState<ProjectInvitation[]>([]);
   const [showCreate, setShowCreate] = useState(false);
+
+  const searchQuery = searchParams.get("q") ?? "";
+  const role = readRole(searchParams.get("role"));
+  const sort = readSort(searchParams.get("sort"));
+  const page = readPageParam(searchParams.get("page"));
+
+  const filters: ProjectFilters = { search: searchQuery, role, sort };
+
+  const [searchDraft, setSearchDraft] = useState(searchQuery);
+  const [syncedSearch, setSyncedSearch] = useState(searchQuery);
+
+  if (searchQuery !== syncedSearch) {
+    setSyncedSearch(searchQuery);
+    setSearchDraft(searchQuery);
+  }
 
   const { changeVersion, reloadNotifications } = useNotifications();
   const { showToast } = useToast();
@@ -64,18 +97,36 @@ function ProjectsPage() {
     let cancelled = false;
 
     async function load() {
-      const result = await getProjects(toProjectQuery(filters, page));
+      setLoading(true);
+
+      const result = await getProjects(toProjectQuery({ search: searchQuery, role, sort }, page));
 
       if (cancelled) return;
 
-      if (result.ok) {
-        setProjects(result.data.data);
-        setMeta(result.data.meta);
-        setError("");
-      } else {
+      if (!result.ok) {
         setError(result.error);
+        setLoading(false);
+        return;
       }
 
+      const lastPage = Math.max(1, result.data.meta.last_page);
+
+      if (page > lastPage) {
+        setSearchParams(
+          (previous) => {
+            const params = new URLSearchParams(previous);
+            setSearchParam(params, "page", lastPage > 1 ? String(lastPage) : "");
+
+            return params;
+          },
+          { replace: true },
+        );
+        return;
+      }
+
+      setProjects(result.data.data);
+      setMeta(result.data.meta);
+      setError("");
       setLoading(false);
     }
 
@@ -84,7 +135,7 @@ function ProjectsPage() {
     return () => {
       cancelled = true;
     };
-  }, [filters, page, reloadToken, changeVersion]);
+  }, [searchQuery, role, sort, page, reloadToken, changeVersion, setSearchParams]);
 
   useEffect(() => {
     let cancelled = false;
@@ -103,15 +154,22 @@ function ProjectsPage() {
   }, [changeVersion, loadInvitations]);
 
   function applyFilters(next: ProjectFilters) {
-    setLoading(true);
     setError("");
-    setPage(1);
-    setFilters(next);
+    const params = new URLSearchParams(searchParams);
+
+    params.delete("page");
+    setSearchParam(params, "q", next.search);
+    setSearchParam(params, "role", next.role === DEFAULT_PROJECT_FILTERS.role ? "" : next.role);
+    setSearchParam(params, "sort", next.sort === DEFAULT_PROJECT_FILTERS.sort ? "" : next.sort);
+
+    setSearchParams(params);
   }
 
   function handlePageChange(nextPage: number) {
-    setLoading(true);
-    setPage(nextPage);
+    const params = new URLSearchParams(searchParams);
+
+    setSearchParam(params, "page", nextPage > 1 ? String(nextPage) : "");
+    setSearchParams(params);
   }
 
   async function handleCreate(name: string) {
@@ -152,7 +210,7 @@ function ProjectsPage() {
 
   function handleReset() {
     setSearchDraft("");
-    applyFilters(DEFAULT_PROJECT_FILTERS);
+    setSearchParams(new URLSearchParams());
   }
 
   const isFiltered =
@@ -253,13 +311,13 @@ function ProjectsPage() {
               </div>
             )}
 
-            {!loading && (
+            {!loading && meta && (
               <div className="mt-4">
                 <Pagination
                   page={page}
-                  totalPages={meta?.last_page ?? 1}
-                  totalCount={meta?.total_count ?? projects.length}
-                  pageSize={meta?.page_size ?? projects.length}
+                  totalPages={meta.last_page}
+                  totalCount={meta.total_count}
+                  pageSize={meta.page_size}
                   onPageChange={handlePageChange}
                 />
               </div>

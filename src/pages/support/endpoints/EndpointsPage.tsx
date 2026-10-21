@@ -12,7 +12,8 @@ import Button from "../../../components/ui/Button";
 import Pagination from "../../../components/ui/Pagination";
 import { useToast } from "../../../components/ui/toastContext";
 import { createEndpoint, getEndpoints, type EndpointOrder } from "../../../lib/endpointApi";
-import { getProjects } from "../../../lib/projectApi";
+import { getAllProjects } from "../../../lib/projectApi";
+import { readPageParam, setSearchParam } from "../../../lib/searchParams";
 import type { Endpoint } from "../../../types/endpoint";
 import type { PaginationMeta } from "../../../types/pagination";
 import type { Project } from "../../../types/project";
@@ -32,11 +33,6 @@ function readOrder(value: string | null): EndpointOrder {
   return ORDER_VALUES.includes(value as EndpointOrder) ? (value as EndpointOrder) : DEFAULT_ORDER;
 }
 
-function setParam(params: URLSearchParams, key: string, value: string) {
-  if (value) params.set(key, value);
-  else params.delete(key);
-}
-
 function EndpointsPage() {
   const user = useOutletContext<CurrentUser>();
   const navigate = useNavigate();
@@ -47,7 +43,7 @@ function EndpointsPage() {
   const projectId = searchParams.get("project_id") ?? "";
   const status = readStatus(searchParams.get("status"));
   const sort = readOrder(searchParams.get("sort"));
-  const page = Math.max(1, Number(searchParams.get("page")) || 1);
+  const page = readPageParam(searchParams.get("page"));
 
   const filters: EndpointFilters = { search: searchQuery, projectId, status, sort };
 
@@ -85,6 +81,21 @@ function EndpointsPage() {
       if (cancelled) return;
 
       if (result.ok) {
+        const lastPage = Math.max(1, result.data.meta.last_page);
+
+        if (page > lastPage) {
+          setSearchParams(
+            (previous) => {
+              const params = new URLSearchParams(previous);
+              setSearchParam(params, "page", lastPage > 1 ? String(lastPage) : "");
+
+              return params;
+            },
+            { replace: true },
+          );
+          return;
+        }
+
         setEndpoints(result.data.data);
         setMeta(result.data.meta);
         setError("");
@@ -100,17 +111,17 @@ function EndpointsPage() {
     return () => {
       cancelled = true;
     };
-  }, [searchQuery, projectId, status, sort, page, reloadToken]);
+  }, [searchQuery, projectId, status, sort, page, reloadToken, setSearchParams]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
-      const result = await getProjects({ perPage: 100 });
+      const result = await getAllProjects();
 
       if (cancelled || !result.ok) return;
 
-      setProjects(result.data.data);
+      setProjects(result.data);
     }
 
     load();
@@ -127,17 +138,17 @@ function EndpointsPage() {
     const params = new URLSearchParams(searchParams);
 
     params.delete("page");
-    setParam(params, "q", next.search);
-    setParam(params, "project_id", next.projectId);
-    setParam(params, "status", next.status === DEFAULT_STATUS ? "" : next.status);
-    setParam(params, "sort", next.sort === DEFAULT_ORDER ? "" : next.sort);
+    setSearchParam(params, "q", next.search);
+    setSearchParam(params, "project_id", next.projectId);
+    setSearchParam(params, "status", next.status === DEFAULT_STATUS ? "" : next.status);
+    setSearchParam(params, "sort", next.sort === DEFAULT_ORDER ? "" : next.sort);
 
     setSearchParams(params);
   }
 
   function handlePageChange(nextPage: number) {
     const params = new URLSearchParams(searchParams);
-    setParam(params, "page", nextPage > 1 ? String(nextPage) : "");
+    setSearchParam(params, "page", nextPage > 1 ? String(nextPage) : "");
 
     setSearchParams(params);
   }

@@ -10,6 +10,8 @@ export type ProjectQueryParams = {
   perPage?: number;
 };
 
+const PROJECT_SELECTOR_PAGE_SIZE = 100;
+
 export function getProjects(params: ProjectQueryParams = {}): Promise<ApiResult<Paginated<Project>>> {
   const query = new URLSearchParams();
 
@@ -22,6 +24,31 @@ export function getProjects(params: ProjectQueryParams = {}): Promise<ApiResult<
   const suffix = query.toString();
 
   return apiRequestPage<Project>(`/projects${suffix ? `?${suffix}` : ""}`);
+}
+
+export async function getAllProjects(): Promise<ApiResult<Project[]>> {
+  const projects: Project[] = [];
+  const seenIds = new Set<string>();
+  let page = 1;
+
+  while (true) {
+    const result = await getProjects({ perPage: PROJECT_SELECTOR_PAGE_SIZE, page });
+
+    if (!result.ok) return result;
+
+    result.data.data.forEach((project) => {
+      if (seenIds.has(project.id)) return;
+
+      seenIds.add(project.id);
+      projects.push(project);
+    });
+
+    const lastPage = Math.max(1, result.data.meta.last_page);
+
+    if (page >= lastPage) return { ok: true, data: projects };
+
+    page += 1;
+  }
 }
 
 export function createProject(name: string): Promise<ApiResult<Project>> {
