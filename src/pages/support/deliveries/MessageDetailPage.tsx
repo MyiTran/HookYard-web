@@ -1,0 +1,221 @@
+import { useEffect, useState, type ReactNode } from "react";
+import { Link, useLocation, useOutletContext, useParams } from "react-router-dom";
+import AttemptCard from "../../../components/deliveries/AttemptCard";
+import DeliveryStatusBadge from "../../../components/deliveries/DeliveryStatusBadge";
+import PayloadBlock from "../../../components/deliveries/PayloadBlock";
+import AppLayout from "../../../components/layout/AppLayout";
+import { formatDateTime } from "../../../lib/dateFormat";
+import { getDeliveryMessage } from "../../../lib/deliveryApi";
+import { readNavValue } from "../../../lib/navState";
+import type { DeliveryMessageDetail } from "../../../types/delivery";
+import type { CurrentUser } from "../../../types/user";
+
+function MessageDetailPage() {
+  const user = useOutletContext<CurrentUser>();
+  const location = useLocation();
+  const { projectId = "", endpointId = "", messageId = "" } = useParams();
+
+  const [message, setMessage] = useState<DeliveryMessageDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [unavailable, setUnavailable] = useState(false);
+
+  const endpointPath = `/projects/${projectId}/endpoints/${endpointId}`;
+  const backTo = readNavValue(location.state, "from") ?? endpointPath;
+  const backLabel = readNavValue(location.state, "fromLabel") ?? "Endpoint";
+  const endpointOrigin = {
+    from: readNavValue(location.state, "endpointFrom"),
+    fromLabel: readNavValue(location.state, "endpointFromLabel"),
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      const result = await getDeliveryMessage(projectId, messageId);
+
+      if (cancelled) return;
+
+      if (!result.ok) {
+        setUnavailable(result.status === 404 || result.status === 403);
+        setLoadError(result.error);
+        setLoading(false);
+        return;
+      }
+
+      setMessage(result.data);
+      setLoading(false);
+    }
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId, messageId]);
+
+  let body: ReactNode;
+
+  if (loading) {
+    body = <p className="mt-8 text-sm font-medium text-[#607267]">Loading delivery...</p>;
+  } else if (unavailable) {
+    body = (
+      <div className="mt-8 rounded-[18px] border border-dashed border-[#C2D4C7] bg-white px-6 py-14 text-center shadow-[0_8px_30px_rgba(32,78,53,0.05)]">
+        <h2 className="text-lg font-semibold tracking-tight">Delivery unavailable</h2>
+        <p className="mx-auto mt-2 max-w-md text-sm font-medium text-[#607267]">
+          This message does not exist or you do not have access to it.
+        </p>
+
+        <Link
+          to={backTo}
+          state={endpointOrigin}
+          className="mt-6 inline-flex h-12 items-center rounded-xl bg-[#214E35] px-6 text-sm font-semibold text-white transition hover:bg-[#173D28]"
+        >
+          Back to endpoint
+        </Link>
+      </div>
+    );
+  } else if (!message) {
+    body = (
+      <div className="mt-8 rounded-[18px] border border-[#F1D5D5] bg-[#FBEEEE] px-6 py-8 text-sm font-medium text-[#B42318]">
+        {loadError}
+      </div>
+    );
+  } else {
+    body = (
+      <>
+        <header className="mt-6">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="min-w-0 truncate text-3xl font-semibold tracking-tight" title={message.event.event_type}>
+              {message.event.event_type}
+            </h1>
+            <DeliveryStatusBadge status={message.status} />
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium text-[#53665A]">
+            <code className="break-all font-mono text-xs text-[#405348]">{message.webhook_id}</code>
+            <span className="text-[#8A9990]">•</span>
+            <span>{formatDateTime(message.created_at)}</span>
+          </div>
+        </header>
+
+        <div className="mt-6 grid gap-6 lg:grid-cols-3">
+          <section className="rounded-[18px] border border-[#D8E3DB] bg-white p-6 shadow-[0_8px_30px_rgba(32,78,53,0.05)] lg:col-span-2">
+            <h2 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Event</h2>
+
+            <dl className="mt-4 grid gap-x-8 gap-y-4 sm:grid-cols-2">
+              <div className="min-w-0">
+                <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Message ID</dt>
+                <dd className="mt-1 break-all font-mono text-xs font-medium text-[#405348]">{message.id}</dd>
+              </div>
+
+              <div className="min-w-0">
+                <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Event ID</dt>
+                <dd className="mt-1 break-all font-mono text-xs font-medium text-[#405348]">{message.event.id}</dd>
+              </div>
+
+              <div className="min-w-0">
+                <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Event type</dt>
+                <dd className="mt-1 break-words text-sm font-semibold text-[#1F2A24]">{message.event.event_type}</dd>
+              </div>
+
+              <div>
+                <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Received</dt>
+                <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{formatDateTime(message.event.created_at)}</dd>
+              </div>
+
+              <div>
+                <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Attempts</dt>
+                <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{message.attempt_count}</dd>
+              </div>
+            </dl>
+
+            <div className="mt-5 border-t border-[#E4EBE6] pt-5">
+              <PayloadBlock label="Event payload" value={message.event.payload} />
+            </div>
+          </section>
+
+          <section className="rounded-[18px] border border-[#D8E3DB] bg-white p-6 shadow-[0_8px_30px_rgba(32,78,53,0.05)]">
+            <h2 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Endpoint</h2>
+
+            <dl className="mt-4 space-y-4">
+              <div>
+                <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Endpoint</dt>
+                <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">
+                  <Link
+                    to={endpointPath}
+                    state={endpointOrigin}
+                    className="break-words text-[#23613F] transition hover:underline"
+                  >
+                    {message.endpoint.name}
+                  </Link>
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">URL</dt>
+                <dd className="mt-1 break-all font-mono text-xs font-medium text-[#405348]">{message.endpoint.url}</dd>
+              </div>
+
+              <div>
+                <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Project</dt>
+                <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">
+                  <Link
+                    to={`/projects/${message.endpoint.project.id}`}
+                    className="break-words text-[#23613F] transition hover:underline"
+                  >
+                    {message.endpoint.project.name}
+                  </Link>
+                </dd>
+              </div>
+            </dl>
+          </section>
+        </div>
+
+        <section className="mt-8">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Attempt history</h2>
+              <p className="mt-1 text-xs font-medium text-[#8A9990]">Each HTTP attempt made for this message.</p>
+            </div>
+
+            <p className="text-xs font-medium text-[#8A9990]">
+              {message.attempts.length} {message.attempts.length === 1 ? "attempt" : "attempts"}
+            </p>
+          </div>
+
+          {message.attempts.length === 0 ? (
+            <div className="mt-4 rounded-[14px] border border-dashed border-[#D2DAD5] bg-[#F2F4F3] px-6 py-10 text-center">
+              <p className="text-sm font-semibold text-[#1F2A24]">No delivery attempts yet</p>
+              <p className="mx-auto mt-1 max-w-sm text-xs font-medium text-[#8A9990]">
+                Attempts will appear here once HookYard starts delivering this message.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-4 space-y-4">
+              {message.attempts.map((attempt) => (
+                <AttemptCard key={attempt.id} attempt={attempt} />
+              ))}
+            </div>
+          )}
+        </section>
+      </>
+    );
+  }
+
+  return (
+    <AppLayout user={user} title={message?.event.event_type || "Delivery"}>
+      <Link
+        to={backTo}
+        state={endpointOrigin}
+        className="text-sm font-semibold text-[#23613F] transition hover:underline"
+      >
+        ← {backLabel}
+      </Link>
+
+      {body}
+    </AppLayout>
+  );
+}
+
+export default MessageDetailPage;
