@@ -4,6 +4,7 @@ import { formatDuration } from "../../lib/durationFormat";
 import type { DeliveryAttempt } from "../../types/delivery";
 import ChevronDownIcon from "../icons/ChevronDownIcon";
 import Button from "../ui/Button";
+import CopyButton from "../ui/CopyButton";
 import DeliveryStatusBadge from "./DeliveryStatusBadge";
 import HttpStatusBadge from "./HttpStatusBadge";
 import PayloadBlock from "./PayloadBlock";
@@ -29,39 +30,39 @@ function MetaItem({ label, children, className = "" }: MetaItemProps) {
 
 function AttemptCard({ attempt }: AttemptCardProps) {
   const [showEvidence, setShowEvidence] = useState(false);
-
   const hasResponse = attempt.response_status !== null;
+  const succeeded = attempt.status === "succeeded";
 
   return (
     <article className="rounded-[16px] border border-[#D8E3DB] bg-white p-5 shadow-[0_8px_30px_rgba(32,78,53,0.04)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h3 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Attempt #{attempt.attempt_number}</h3>
-            <DeliveryStatusBadge status={attempt.status} />
-          </div>
+        <div className="flex min-w-0 items-start gap-3">
+          <span
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+              succeeded ? "bg-[#EAF5EE] text-[#23613F]" : "bg-[#FBEEEE] text-[#B42318]"
+            }`}
+          >
+            {attempt.attempt_number}
+          </span>
 
-          <p className="mt-1 text-xs font-medium text-[#8A9990]">
-            Signed {formatDateTime(attempt.signed_at)}
-          </p>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Attempt #{attempt.attempt_number}</h3>
+              <DeliveryStatusBadge status={attempt.status} />
+            </div>
+
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium text-[#8A9990]">
+              <span>{formatDateTime(attempt.created_at)}</span>
+              <span aria-hidden="true">•</span>
+              <span>{formatDuration(attempt.duration_ms)}</span>
+              <span aria-hidden="true">•</span>
+              <span>Secret v{attempt.signing_secret_version}</span>
+            </p>
+          </div>
         </div>
 
         <HttpStatusBadge status={attempt.response_status} errorType={attempt.error_type} />
       </div>
-
-      <dl className="mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
-        <MetaItem label="Duration">{formatDuration(attempt.duration_ms)}</MetaItem>
-        <MetaItem label="Request ID">
-          <span className="break-all font-mono text-[11px] font-medium text-[#405348]">{attempt.request_id}</span>
-        </MetaItem>
-        <MetaItem label="Secret version">{attempt.signing_secret_version}</MetaItem>
-        <MetaItem label="Method">
-          <span className="font-mono text-xs">{attempt.http_method}</span>
-        </MetaItem>
-        <MetaItem label="Request URL" className="sm:col-span-2 lg:col-span-4">
-          <span className="break-all font-mono text-[11px] font-medium text-[#405348]">{attempt.request_url}</span>
-        </MetaItem>
-      </dl>
 
       {!hasResponse && (
         <div className="mt-4 rounded-xl bg-[#FBF1E4] px-4 py-3">
@@ -75,10 +76,30 @@ function AttemptCard({ attempt }: AttemptCardProps) {
         </div>
       )}
 
+      <dl className="mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+        <MetaItem label="Request ID">
+          <span className="flex min-w-0 flex-wrap items-center gap-1">
+            <span className="break-all font-mono text-[11px] font-medium text-[#405348]">{attempt.request_id}</span>
+            <CopyButton value={attempt.request_id} ariaLabel="Copy request ID" />
+          </span>
+        </MetaItem>
+
+        <MetaItem label="Method">
+          <span className="font-mono text-xs">{attempt.http_method}</span>
+        </MetaItem>
+
+        <MetaItem label="Signed at">{formatDateTime(attempt.signed_at)}</MetaItem>
+
+        <MetaItem label="Request URL" className="sm:col-span-2 lg:col-span-3">
+          <span className="break-all font-mono text-[11px] font-medium text-[#405348]">{attempt.request_url}</span>
+        </MetaItem>
+      </dl>
+
       <Button
         variant="secondary"
         size="sm"
         className="mt-4 w-full sm:w-auto"
+        aria-expanded={showEvidence}
         onClick={() => setShowEvidence((visible) => !visible)}
       >
         <ChevronDownIcon className={`h-4 w-4 transition ${showEvidence ? "rotate-180" : ""}`} />

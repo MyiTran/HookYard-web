@@ -1,23 +1,35 @@
 import { useState } from "react";
 import { useNotifications } from "../../hooks/notificationsContext";
+import BarsIcon from "../icons/BarsIcon";
 import BellIcon from "../icons/BellIcon";
 import NotificationDropdown from "../notifications/NotificationDropdown";
 
-type TopbarProps = { title: string };
+type TopbarProps = { title: string; menuOpen: boolean; onOpenMenu: () => void };
 
-function Topbar({ title }: TopbarProps) {
+function Topbar({ title, menuOpen, onOpenMenu }: TopbarProps) {
   const [open, setOpen] = useState(false);
   const { unreadCount } = useNotifications();
 
   return (
-    <header className="flex h-20 items-center justify-between border-b border-[#DCE6DF] bg-white px-8">
-      <div className="flex items-center gap-2 text-sm">
-        <span className="font-medium text-[#5D7063]">HookYard</span>
-        <span className="text-[#9EADA3]">/</span>
-        <span className="font-semibold">{title}</span>
+    <header className="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-[#DCE6DF] bg-white px-4 sm:h-20 sm:px-6 lg:px-8">
+      <div className="flex min-w-0 items-center gap-2 text-sm">
+        <button
+          type="button"
+          aria-label="Open navigation"
+          aria-controls="mobile-navigation"
+          aria-expanded={menuOpen}
+          onClick={onOpenMenu}
+          className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl text-[#405348] transition hover:bg-[#EFF5F1] lg:hidden"
+        >
+          <BarsIcon className="h-5 w-5" />
+        </button>
+
+        <span className="hidden shrink-0 font-medium text-[#5D7063] sm:inline">HookYard</span>
+        <span className="hidden shrink-0 text-[#9EADA3] sm:inline">/</span>
+        <span className="min-w-0 truncate font-semibold">{title}</span>
       </div>
 
-      <div className="relative">
+      <div className="relative shrink-0">
         <button
           type="button"
           aria-label="Notifications"

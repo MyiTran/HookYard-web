@@ -6,6 +6,8 @@ type PaginationProps = {
   onPageChange: (page: number) => void;
   totalCount?: number;
   pageSize?: number;
+  pageSizeOptions?: number[];
+  onPageSizeChange?: (pageSize: number) => void;
   disabled?: boolean;
 };
 
@@ -49,6 +51,8 @@ function Pagination({
   onPageChange,
   totalCount,
   pageSize,
+  pageSizeOptions,
+  onPageSizeChange,
   disabled = false,
 }: PaginationProps) {
   const pageCount = Math.max(1, totalPages);
@@ -65,7 +69,28 @@ function Pagination({
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
-      {summary ? <p className="text-xs font-medium text-[#8A9990]">{summary}</p> : <span />}
+      <div className="flex flex-wrap items-center gap-3">
+        {summary ? <p className="text-xs font-medium text-[#8A9990]">{summary}</p> : <span />}
+
+        {pageSizeOptions && typeof pageSize === "number" && onPageSizeChange && (
+          <label className="flex items-center gap-2 text-xs font-medium text-[#8A9990]">
+            <span className="sr-only">Rows per page</span>
+            <select
+              value={pageSize}
+              onChange={(event) => onPageSizeChange(Number(event.target.value))}
+              disabled={disabled}
+              aria-label="Rows per page"
+              className="h-8 cursor-pointer rounded-lg border border-[#C9DACE] bg-white px-2 text-xs font-semibold text-[#405348] outline-none transition focus:border-[#23613F] focus:ring-2 focus:ring-[#23613F]/10 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {pageSizeOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option} / page
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+      </div>
 
       <nav aria-label="Pagination" className="flex items-center gap-1">
         <button

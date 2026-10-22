@@ -2,10 +2,13 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation, useOutletContext, useParams } from "react-router-dom";
 import AttemptCard from "../../../components/deliveries/AttemptCard";
 import DeliveryStatusBadge from "../../../components/deliveries/DeliveryStatusBadge";
+import HttpStatusBadge from "../../../components/deliveries/HttpStatusBadge";
 import PayloadBlock from "../../../components/deliveries/PayloadBlock";
 import AppLayout from "../../../components/layout/AppLayout";
+import CopyButton from "../../../components/ui/CopyButton";
 import { formatDateTime } from "../../../lib/dateFormat";
 import { getDeliveryMessage } from "../../../lib/deliveryApi";
+import { formatDuration } from "../../../lib/durationFormat";
 import { readNavValue } from "../../../lib/navState";
 import type { DeliveryMessageDetail } from "../../../types/delivery";
 import type { CurrentUser } from "../../../types/user";
@@ -82,22 +85,87 @@ function MessageDetailPage() {
       </div>
     );
   } else {
+    const latestAttempt = message.attempts[message.attempts.length - 1] ?? null;
+
     body = (
       <>
-        <header className="mt-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="min-w-0 truncate text-3xl font-semibold tracking-tight" title={message.event.event_type}>
-              {message.event.event_type}
-            </h1>
-            <DeliveryStatusBadge status={message.status} />
-          </div>
+        <header className="mt-6 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="min-w-0 truncate text-3xl font-semibold tracking-tight" title={message.event.event_type}>
+                {message.event.event_type}
+              </h1>
+              <DeliveryStatusBadge status={message.status} />
+            </div>
 
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium text-[#53665A]">
-            <code className="break-all font-mono text-xs text-[#405348]">{message.webhook_id}</code>
-            <span className="text-[#8A9990]">•</span>
-            <span>{formatDateTime(message.created_at)}</span>
+            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-[#53665A]">
+              <code className="break-all font-mono text-xs text-[#405348]">{message.webhook_id}</code>
+              <CopyButton value={message.webhook_id} ariaLabel="Copy message webhook ID" />
+              <span className="text-[#8A9990]">•</span>
+              <span>{formatDateTime(message.created_at)}</span>
+            </div>
           </div>
         </header>
+
+        <section className="mt-5 rounded-[18px] border border-[#D8E3DB] bg-white p-5 shadow-[0_8px_30px_rgba(32,78,53,0.05)]">
+          <dl className="grid gap-x-8 gap-y-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="min-w-0">
+              <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Endpoint</dt>
+              <dd className="mt-1 min-w-0">
+                <Link
+                  to={endpointPath}
+                  state={endpointOrigin}
+                  className="block truncate text-sm font-semibold text-[#23613F] transition hover:underline"
+                >
+                  {message.endpoint.name}
+                </Link>
+                <Link
+                  to={`/projects/${message.endpoint.project.id}`}
+                  className="mt-0.5 block truncate text-xs font-medium text-[#8A9990] transition hover:underline"
+                >
+                  {message.endpoint.project.name}
+                </Link>
+              </dd>
+            </div>
+
+            <div className="min-w-0">
+              <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Received</dt>
+              <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{formatDateTime(message.created_at)}</dd>
+            </div>
+
+            <div className="min-w-0">
+              <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Attempts</dt>
+              <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">
+                {message.attempt_count}
+                <p className="mt-0.5 text-xs font-medium text-[#8A9990]">
+                  {latestAttempt ? `Latest ${formatDateTime(latestAttempt.created_at)}` : "No attempts yet"}
+                </p>
+              </dd>
+            </div>
+
+            <div className="min-w-0">
+              <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Latest result</dt>
+              <dd className="mt-1">
+                {latestAttempt ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <DeliveryStatusBadge status={latestAttempt.status} />
+                    <HttpStatusBadge
+                      status={latestAttempt.response_status}
+                      errorType={latestAttempt.error_type}
+                    />
+                    {latestAttempt.duration_ms !== null && (
+                      <span className="text-xs font-medium text-[#8A9990]">
+                        {formatDuration(latestAttempt.duration_ms)}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-sm font-medium text-[#8A9990]">No attempts yet</span>
+                )}
+              </dd>
+            </div>
+          </dl>
+        </section>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
           <section className="rounded-[18px] border border-[#D8E3DB] bg-white p-6 shadow-[0_8px_30px_rgba(32,78,53,0.05)] lg:col-span-2">
@@ -123,16 +191,18 @@ function MessageDetailPage() {
                 <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Received</dt>
                 <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{formatDateTime(message.event.created_at)}</dd>
               </div>
-
-              <div>
-                <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Attempts</dt>
-                <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{message.attempt_count}</dd>
-              </div>
             </dl>
 
-            <div className="mt-5 border-t border-[#E4EBE6] pt-5">
-              <PayloadBlock label="Event payload" value={message.event.payload} />
-            </div>
+            <details className="group mt-5 border-t border-[#E4EBE6] pt-5">
+              <summary className="cursor-pointer list-none text-xs font-semibold text-[#23613F] transition hover:underline [&::-webkit-details-marker]:hidden">
+                <span className="group-open:hidden">Show event payload</span>
+                <span className="hidden group-open:inline">Hide event payload</span>
+              </summary>
+
+              <div className="mt-3">
+                <PayloadBlock label="Payload" value={message.event.payload} />
+              </div>
+            </details>
           </section>
 
           <section className="rounded-[18px] border border-[#D8E3DB] bg-white p-6 shadow-[0_8px_30px_rgba(32,78,53,0.05)]">
@@ -192,11 +262,13 @@ function MessageDetailPage() {
               </p>
             </div>
           ) : (
-            <div className="mt-4 space-y-4">
+            <ol className="mt-4 space-y-4">
               {message.attempts.map((attempt) => (
-                <AttemptCard key={attempt.id} attempt={attempt} />
+                <li key={attempt.id}>
+                  <AttemptCard attempt={attempt} />
+                </li>
               ))}
-            </div>
+            </ol>
           )}
         </section>
       </>

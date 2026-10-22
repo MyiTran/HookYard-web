@@ -8,10 +8,11 @@ import AppLayout from "../../../components/layout/AppLayout";
 import ActivityIcon from "../../../components/icons/ActivityIcon";
 import Button from "../../../components/ui/Button";
 import Pagination from "../../../components/ui/Pagination";
-import { DELIVERIES_PAGE_SIZE, getDeliveries } from "../../../lib/deliveryApi";
+import { DELIVERIES_PAGE_SIZE, DELIVERIES_PAGE_SIZES, getDeliveries } from "../../../lib/deliveryApi";
 import { getEndpoints } from "../../../lib/endpointApi";
 import { getProjects } from "../../../lib/projectApi";
 import type {
+  DeliveryFilterKey,
   DeliveryFilters,
   DeliveryOrder,
   DeliveryStatusFilter,
@@ -41,9 +42,22 @@ function readDate(value: string | null): string {
 }
 
 function readPage(value: string | null): number {
+  if (!value || !/^\d+$/.test(value)) return 1;
+
   const parsed = Number(value);
 
-  return Number.isInteger(parsed) && parsed > 1 ? parsed : 1;
+  return parsed > 1 ? parsed : 1;
+}
+
+function readPageSize(value: string | null): number {
+  const parsed = Number(value);
+
+  return DELIVERIES_PAGE_SIZES.includes(parsed) ? parsed : DELIVERIES_PAGE_SIZE;
+}
+
+function setPageParam(params: URLSearchParams, page: number): void {
+  if (page > 1) params.set("page", String(page));
+  else params.delete("page");
 }
 
 function readFilters(params: URLSearchParams): DeliveryFilters {
@@ -59,7 +73,7 @@ function readFilters(params: URLSearchParams): DeliveryFilters {
   };
 }
 
-function buildFilterParams(filters: DeliveryFilters): URLSearchParams {
+function buildFilterParams(filters: DeliveryFilters, pageSize: number): URLSearchParams {
   const params = new URLSearchParams();
 
   if (filters.q) params.set("q", filters.q);
@@ -70,6 +84,7 @@ function buildFilterParams(filters: DeliveryFilters): URLSearchParams {
   if (filters.from) params.set("from", filters.from);
   if (filters.to) params.set("to", filters.to);
   if (filters.order !== DEFAULT_ORDER) params.set("order", filters.order);
+  if (pageSize !== DELIVERIES_PAGE_SIZE) params.set("page_size", String(pageSize));
 
   return params;
 }
@@ -80,6 +95,7 @@ function DeliveriesPage() {
 
   const filters = readFilters(searchParams);
   const page = readPage(searchParams.get("page"));
+  const pageSize = readPageSize(searchParams.get("page_size"));
 
   const [deliveries, setDeliveries] = useState<GlobalDeliveryMessageSummary[]>([]);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
@@ -162,7 +178,7 @@ function DeliveriesPage() {
         to: filters.to || undefined,
         order: filters.order,
         page,
-        perPage: DELIVERIES_PAGE_SIZE,
+        perPage: pageSize,
       });
 
       if (cancelled) return;
@@ -175,14 +191,23 @@ function DeliveriesPage() {
         return;
       }
 
-      setError("");
-      setMeta(result.data.meta);
+      const lastPage = Math.max(1, result.data.meta.last_page);
 
-      if (page > result.data.meta.last_page) {
-        setLoading(false);
+      if (page > lastPage) {
+        setSearchParams(
+          (previous) => {
+            const params = new URLSearchParams(previous);
+            setPageParam(params, lastPage);
+
+            return params;
+          },
+          { replace: true },
+        );
         return;
       }
 
+      setError("");
+      setMeta(result.data.meta);
       setDeliveries(result.data.data);
       setLoading(false);
     }
@@ -202,25 +227,54 @@ function DeliveriesPage() {
     filters.to,
     filters.order,
     page,
+    pageSize,
     reloadToken,
+    setSearchParams,
   ]);
-
-  useEffect(() => {
-    if (!meta || page <= meta.last_page) return;
-
-    const params = new URLSearchParams(searchParams);
-
-    if (meta.last_page > 1) params.set("page", String(meta.last_page));
-    else params.delete("page");
-
-    setSearchParams(params, { replace: true });
-  }, [meta, page, searchParams, setSearchParams]);
 
   function applyFilters(next: DeliveryFilters) {
     const projectChanged = next.projectId !== filters.projectId;
     const normalized = projectChanged ? { ...next, endpointId: "" } : next;
 
-    setSearchParams(buildFilterParams(normalized));
+    setSearchParams(buildFilterParams(normalized, pageSize));
+  }
+
+  function handleRemoveFilter(key: DeliveryFilterKey) {
+    const next: DeliveryFilters = { ...filters };
+
+    switch (key) {
+      case "q":
+        next.q = "";
+        setSearchDraft("");
+        break;
+      case "projectId":
+        next.projectId = "";
+        next.endpointId = "";
+        break;
+      case "endpointId":
+        next.endpointId = "";
+        break;
+      case "status":
+        next.status = DEFAULT_STATUS;
+        break;
+      case "eventType":
+        next.eventType = "";
+        setEventTypeDraft("");
+        break;
+      case "from":
+        next.from = "";
+        setFromDraft("");
+        break;
+      case "to":
+        next.to = "";
+        setToDraft("");
+        break;
+      case "order":
+        next.order = DEFAULT_ORDER;
+        break;
+    }
+
+    applyFilters(next);
   }
 
   function handleSearchSubmit() {
@@ -238,15 +292,27 @@ function DeliveriesPage() {
     setEventTypeDraft("");
     setFromDraft("");
     setToDraft("");
-    setSearchParams(new URLSearchParams());
+
+    const params = new URLSearchParams();
+
+    if (pageSize !== DELIVERIES_PAGE_SIZE) params.set("page_size", String(pageSize));
+    setSearchParams(params);
   }
 
   function handlePageChange(nextPage: number) {
     const params = new URLSearchParams(searchParams);
 
-    if (nextPage > 1) params.set("page", String(nextPage));
-    else params.delete("page");
+    setPageParam(params, nextPage);
+    setSearchParams(params);
+  }
 
+  function handlePageSizeChange(nextPageSize: number) {
+    const params = new URLSearchParams(searchParams);
+
+    if (nextPageSize !== DELIVERIES_PAGE_SIZE) params.set("page_size", String(nextPageSize));
+    else params.delete("page_size");
+
+    params.delete("page");
     setSearchParams(params);
   }
 
@@ -260,8 +326,6 @@ function DeliveriesPage() {
     filters.to !== "" ||
     filters.order !== DEFAULT_ORDER;
 
-  const totalPages = meta?.last_page ?? 1;
-  const isClamping = Boolean(meta && page > meta.last_page);
   const backTo = `/deliveries${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
 
   return (
@@ -298,12 +362,13 @@ function DeliveriesPage() {
           onFiltersChange={applyFilters}
           onSubmit={handleSearchSubmit}
           onReset={handleReset}
+          onRemoveFilter={handleRemoveFilter}
           isFiltered={isFiltered}
         />
       </div>
 
       <section className="mt-6">
-        {(loading || isClamping) && deliveries.length === 0 ? (
+        {loading && deliveries.length === 0 ? (
           <p className="text-sm font-medium text-[#607267]">Loading deliveries...</p>
         ) : error ? (
           <div className="rounded-[18px] border border-[#F1D5D5] bg-[#FBEEEE] px-6 py-6">
@@ -341,9 +406,9 @@ function DeliveriesPage() {
           </div>
         ) : (
           <div
-            aria-busy={loading || isClamping}
+            aria-busy={loading}
             className={`overflow-hidden rounded-[18px] border border-[#D8E3DB] bg-white shadow-[0_8px_30px_rgba(32,78,53,0.05)] transition ${
-              loading || isClamping ? "opacity-60" : "opacity-100"
+              loading ? "opacity-60" : "opacity-100"
             }`}
           >
             <div
@@ -352,10 +417,9 @@ function DeliveriesPage() {
               <span>Status</span>
               <span>Event</span>
               <span>Endpoint</span>
-              <span>Project</span>
               <span>Result</span>
               <span>Attempts</span>
-              <span>Created</span>
+              <span>Received</span>
               <span />
             </div>
 
@@ -367,14 +431,15 @@ function DeliveriesPage() {
           </div>
         )}
 
-        {!error && meta && meta.total_count > 0 && (
+        {!loading && !error && meta && meta.total_count > 0 && (
           <div className="mt-4">
             <Pagination
-              page={Math.min(page, totalPages)}
-              totalPages={totalPages}
+              page={page}
+              totalPages={meta.last_page}
               totalCount={meta.total_count}
               pageSize={meta.page_size}
-              disabled={loading || isClamping}
+              pageSizeOptions={DELIVERIES_PAGE_SIZES}
+              onPageSizeChange={handlePageSizeChange}
               onPageChange={handlePageChange}
             />
           </div>
