@@ -331,7 +331,7 @@ function EndpointDetailPage() {
               </span>
               <h2 className="text-sm font-semibold tracking-tight text-[#173D28]">Signing secret</h2>
 
-              <ContextualHelp label="How to verify webhook signatures" title="How to verify webhook signatures">
+              <ContextualHelp label="Verify a webhook" title="Verify a webhook">
                 <SigningSecretHelp />
               </ContextualHelp>
             </div>

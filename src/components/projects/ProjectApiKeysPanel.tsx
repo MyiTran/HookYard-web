@@ -120,7 +120,7 @@ function ProjectApiKeysPanel({ project }: ProjectApiKeysPanelProps) {
           <div className="flex min-w-0 items-center gap-2">
             <h2 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Event ingestion</h2>
 
-            <ContextualHelp label="How to send events" title="How to send events" widthRem={42}>
+            <ContextualHelp label="Send an event" title="Send an event" widthRem={42}>
               <EventIngestionHelp />
             </ContextualHelp>
           </div>

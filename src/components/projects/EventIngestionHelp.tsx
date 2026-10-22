@@ -1,94 +1,126 @@
-const EVENT_REQUEST_EXAMPLE = `POST /api/v1/events
-Authorization: Bearer hky_...
-Content-Type: application/json
+import type { ReactNode } from "react";
+import CopyButton from "../ui/CopyButton";
 
-{
+const EVENT_REQUEST_EXAMPLE = `{
   "event_type": "order.created",
-  "idempotency_key": "order-123-created",
-  "payload": {
-    "order_id": "ord_123"
-  }
+  "idempotency_key": "order_123",
+  "payload": { "order_id": "123" }
 }`;
+
+const CHIP = "inline-flex w-fit items-center rounded-md bg-[#EFF5F1] px-1.5 py-0.5 text-[10px] font-semibold text-[#53665A]";
+const FIELD_GRID =
+  "grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 px-3 py-2.5 sm:grid-cols-[minmax(0,1.1fr)_4.25rem_5.25rem_minmax(0,1.7fr)] sm:items-start";
+const FIELD_HEADER =
+  "hidden grid-cols-[minmax(0,1.1fr)_4.25rem_5.25rem_minmax(0,1.7fr)] gap-x-3 border-b border-[#E4EBE6] bg-[#F7FAF8] px-3 py-2 text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990] sm:grid";
+
+type ReferenceFieldProps = {
+  name: string;
+  type: "string" | "object" | "header";
+  description: ReactNode;
+};
+
+function ReferenceField({ name, type, description }: ReferenceFieldProps) {
+  return (
+    <div className={FIELD_GRID}>
+      <dt className="min-w-0 break-words font-mono text-[11px] font-semibold text-[#1F2A24]">{name}</dt>
+
+      <dd className="flex items-center gap-1 sm:contents">
+        <span className={CHIP}>{type}</span>
+        <span className={CHIP}>required</span>
+      </dd>
+
+      <dd className="col-span-2 break-words text-xs font-medium leading-5 text-[#607267] sm:col-span-1">
+        {description}
+      </dd>
+    </div>
+  );
+}
 
 function EventIngestionHelp() {
   return (
     <div className="space-y-4">
-      <p className="text-sm font-medium leading-6 text-[#405348]">
-        Send an event from your server using a Project API key. Each request sends one event. Replace the example
-        values below with information from your own system.
-      </p>
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[#E4EBE6] bg-[#F7FAF8] px-3 py-2">
+        <span className="rounded-md bg-[#EAF5EE] px-1.5 py-0.5 font-mono text-[10px] font-semibold text-[#23613F]">
+          POST
+        </span>
+        <code className="min-w-0 break-all font-mono text-xs font-semibold text-[#1F2A24]">/api/v1/events</code>
+      </div>
 
-      <div>
-        <p className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
-          Example request — replace the example values
-        </p>
+      <section>
+        <h4 className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Authorization</h4>
 
-        <div className="mt-2 overflow-hidden rounded-xl border border-[#2A3A31] bg-[#17211B]">
-          <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-2">
-            <p className="text-[10px] font-semibold uppercase tracking-[2px] text-white/50">API request</p>
-            <span className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-[#B6CEBC]">
-              POST
-            </span>
+        <dl className="mt-1.5 divide-y divide-[#E4EBE6] overflow-hidden rounded-xl border border-[#E4EBE6] bg-white">
+          <ReferenceField
+            name="Authorization"
+            type="header"
+            description={<code className="font-mono text-[11px]">{"Bearer <project-api-key>"}</code>}
+          />
+          <ReferenceField
+            name="Content-Type"
+            type="header"
+            description={<code className="font-mono text-[11px]">application/json</code>}
+          />
+        </dl>
+      </section>
+
+      <section>
+        <div className="flex items-center justify-between gap-2">
+          <h4 className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Request body</h4>
+          <span className={CHIP}>body</span>
+        </div>
+
+        <dl className="mt-1.5 overflow-hidden rounded-xl border border-[#E4EBE6] bg-white">
+          <div className={FIELD_HEADER} aria-hidden="true">
+            <span>Name</span>
+            <span>Type</span>
+            <span>Required</span>
+            <span>Description</span>
           </div>
 
-          <pre className="overflow-x-auto px-4 py-3 font-mono text-xs leading-6 text-[#D8E3DB]">
-            {EVENT_REQUEST_EXAMPLE}
-          </pre>
-        </div>
-      </div>
+          <div className="divide-y divide-[#E4EBE6]">
+            <ReferenceField
+              name="event_type"
+              type="string"
+              description="Event name, e.g. order.created. Max 255 characters."
+            />
+            <ReferenceField
+              name="idempotency_key"
+              type="string"
+              description="Unique key for this event. Max 255 characters."
+            />
+            <ReferenceField
+              name="payload"
+              type="object"
+              description="Your application event data. Must be a JSON object."
+            />
+          </div>
+        </dl>
+      </section>
 
-      <dl className="divide-y divide-[#E4EBE6] rounded-xl border border-[#E4EBE6] bg-white">
-        <div className="px-3 py-2.5 sm:grid sm:grid-cols-[10.5rem,1fr] sm:gap-3">
-          <dt className="text-xs font-semibold text-[#1F2A24]">
-            Event name <code className="font-mono text-[11px] text-[#53665A]">event_type</code>
-          </dt>
-          <dd className="mt-1 text-xs font-medium leading-5 text-[#607267] sm:mt-0">
-            A label that describes what happened, for example <code>order.created</code>,{" "}
-            <code>payment.completed</code>, or <code>user.created</code>. Replace it with the event type from your
-            system.
-          </dd>
-        </div>
-
-        <div className="px-3 py-2.5 sm:grid sm:grid-cols-[10.5rem,1fr] sm:gap-3">
-          <dt className="text-xs font-semibold text-[#1F2A24]">
-            Unique event ID <code className="font-mono text-[11px] text-[#53665A]">idempotency_key</code>
-          </dt>
-          <dd className="mt-1 text-xs font-medium leading-5 text-[#607267] sm:mt-0">
-            Required. Replace the example value with a unique value for this specific event. If your system sends the
-            same event again, HookYard can use it to avoid creating a duplicate.
-          </dd>
+      <section>
+        <div className="flex items-center justify-between gap-2">
+          <h4 className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Example</h4>
+          <CopyButton value={EVENT_REQUEST_EXAMPLE} label="Copy JSON" ariaLabel="Copy event request example" />
         </div>
 
-        <div className="px-3 py-2.5 sm:grid sm:grid-cols-[10.5rem,1fr] sm:gap-3">
-          <dt className="text-xs font-semibold text-[#1F2A24]">
-            Event data <code className="font-mono text-[11px] text-[#53665A]">payload</code>
-          </dt>
-          <dd className="mt-1 text-xs font-medium leading-5 text-[#607267] sm:mt-0">
-            The details you want to send as a JSON object. Its fields are flexible and depend on your system. Replace
-            the example values with your own event data.
-          </dd>
+        <pre className="mt-1.5 whitespace-pre-wrap break-words rounded-xl bg-[#17211B] px-3 py-2.5 font-mono text-[11px] leading-5 text-[#D8E3DB]">
+          {EVENT_REQUEST_EXAMPLE}
+        </pre>
+      </section>
+
+      <section>
+        <h4 className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Idempotency & responses</h4>
+
+        <div className="mt-1.5 space-y-1.5 rounded-xl border border-[#E4EBE6] bg-white px-3 py-2.5">
+          <p className="text-[11px] font-medium leading-4 text-[#607267]">
+            Same key + same content returns the existing event without creating duplicate deliveries.
+          </p>
+          <p className="text-[11px] font-medium leading-4 text-[#607267]">
+            202 new event · 200 duplicate · 401 invalid or revoked key · 422 invalid body or reused key with
+            different content
+          </p>
         </div>
-      </dl>
-
-      <div className="rounded-xl border border-[#D8E3DB] bg-white px-4 py-3">
-        <p className="text-xs font-semibold text-[#1F2A24]">What to change</p>
-        <ol className="mt-2 list-decimal space-y-1 pl-4 text-xs font-medium leading-5 text-[#607267]">
-          <li>
-            Replace <code>hky_...</code> with the API key you created.
-          </li>
-          <li>
-            Replace <code>order.created</code> with the type of event from your system.
-          </li>
-          <li>Use a new unique idempotency key for each event.</li>
-          <li>
-            Put your own event details inside <code>payload</code>.
-          </li>
-        </ol>
-      </div>
-
-      <p className="text-[11px] font-medium text-[#8A9990]">
-        Send requests from your server. Never expose your API key in browser or mobile-app code.
-      </p>
+      </section>
     </div>
   );
 }
