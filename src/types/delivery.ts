@@ -48,6 +48,8 @@ export type DeliveryFilters = {
   order: DeliveryOrder;
 };
 
+export type DeliveryFilterKey = keyof DeliveryFilters;
+
 export type DeliveryEvent = {
   id: string;
   event_type: string;

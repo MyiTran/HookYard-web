@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
 import MyInvitationsList from "../../../components/projects/MyInvitationsList";
 import ProjectCard, { PROJECT_ROW_GRID_COLS } from "../../../components/projects/ProjectCard";
 import ProjectFilterBar, { type ProjectFilters } from "../../../components/projects/ProjectFilterBar";
 import ProjectFormModal from "../../../components/projects/ProjectFormModal";
+import ApiKeyFormModal from "../../../components/projects/ApiKeyFormModal";
+import ApiKeyTokenDialog from "../../../components/projects/ApiKeyTokenDialog";
 import Button from "../../../components/ui/Button";
 import Pagination from "../../../components/ui/Pagination";
 import { useToast } from "../../../components/ui/toastContext";
@@ -17,6 +19,8 @@ import {
   listMyInvitations,
   type ProjectQueryParams,
 } from "../../../lib/projectApi";
+import { createProjectApiCredential } from "../../../lib/apiCredentialApi";
+import type { CreatedProjectApiCredential } from "../../../types/apiCredential";
 import type { PaginationMeta } from "../../../types/pagination";
 import type { Project, ProjectInvitation } from "../../../types/project";
 import type { CurrentUser } from "../../../types/user";
@@ -38,6 +42,7 @@ function toProjectQuery(filters: ProjectFilters, page: number): ProjectQueryPara
 
 function ProjectsPage() {
   const user = useOutletContext<CurrentUser>();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [page, setPage] = useState(1);
@@ -50,6 +55,8 @@ function ProjectsPage() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [invitations, setInvitations] = useState<ProjectInvitation[]>([]);
   const [showCreate, setShowCreate] = useState(false);
+  const [onboardingProject, setOnboardingProject] = useState<Project | null>(null);
+  const [createdApiKey, setCreatedApiKey] = useState<CreatedProjectApiCredential | null>(null);
 
   const { changeVersion, reloadNotifications } = useNotifications();
   const { showToast } = useToast();
@@ -119,10 +126,27 @@ function ProjectsPage() {
 
     if (result.ok) {
       setReloadToken((token) => token + 1);
+      setOnboardingProject(result.data);
       showToast({ type: "success", message: "Project created successfully" });
     }
 
     return result;
+  }
+
+  async function handleCreateApiKey(name: string) {
+    if (!onboardingProject) return { ok: false, error: "Project unavailable.", status: 0 } as const;
+
+    const result = await createProjectApiCredential(onboardingProject.id, name);
+
+    if (result.ok) setCreatedApiKey(result.data);
+
+    return result;
+  }
+
+  function openOnboardingProject(project: Project) {
+    setOnboardingProject(null);
+    setCreatedApiKey(null);
+    navigate(`/projects/${project.id}`);
   }
 
   async function handleInvitationAction(invitation: ProjectInvitation, action: "accept" | "decline") {
@@ -275,6 +299,26 @@ function ProjectsPage() {
           initialName=""
           onSubmit={handleCreate}
           onClose={() => setShowCreate(false)}
+        />
+      )}
+
+      {onboardingProject && !createdApiKey && (
+        <ApiKeyFormModal
+          title="Set up event ingestion"
+          submitLabel="Create API key"
+          cancelLabel="Open project"
+          initialName="Default integration"
+          description={`"${onboardingProject.name}" is ready. Create the first project API key so your source system can publish Events into HookYard. You can also create one later in the project's API keys section.`}
+          onSubmit={handleCreateApiKey}
+          onClose={() => openOnboardingProject(onboardingProject)}
+        />
+      )}
+
+      {onboardingProject && createdApiKey && (
+        <ApiKeyTokenDialog
+          token={createdApiKey.token}
+          keyName={createdApiKey.name}
+          onClose={() => openOnboardingProject(onboardingProject)}
         />
       )}
     </AppLayout>

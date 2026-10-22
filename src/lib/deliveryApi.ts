@@ -9,6 +9,7 @@ import type { Paginated } from "../types/pagination";
 import { apiRequest, apiRequestPage, type ApiResult } from "./apiRequest";
 
 export const DELIVERIES_PAGE_SIZE = 25;
+export const DELIVERIES_PAGE_SIZES = [25, 50, 100];
 
 export type DeliveryQuery = {
   q?: string;

@@ -12,7 +12,7 @@ type GlobalDeliveryRowProps = {
 };
 
 export const GLOBAL_DELIVERY_ROW_GRID_COLS =
-  "lg:grid-cols-[7rem_minmax(0,1.5fr)_minmax(0,1.3fr)_minmax(0,0.9fr)_8rem_4.5rem_minmax(0,8rem)_2rem]";
+  "lg:grid-cols-[7rem_minmax(0,1.6fr)_minmax(0,1.4fr)_8.5rem_6rem_minmax(0,8.5rem)_2rem]";
 
 const MOBILE_LABEL_CLASS = "text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990] lg:hidden";
 
@@ -21,6 +21,9 @@ function attemptLabel(count: number): string {
 }
 
 function GlobalDeliveryRow({ message, backTo }: GlobalDeliveryRowProps) {
+  const inProgress =
+    message.status === "delivering" && message.last_response_status === null && !message.last_error_type;
+
   return (
     <Link
       to={`/projects/${message.project.id}/endpoints/${message.endpoint.id}/deliveries/${message.id}`}
@@ -31,17 +34,17 @@ function GlobalDeliveryRow({ message, backTo }: GlobalDeliveryRowProps) {
         endpointFrom: backTo,
         endpointFromLabel: "Deliveries",
       }}
-      className={`group grid gap-x-4 gap-y-2 px-5 py-4 transition hover:bg-[#F7FAF8] sm:grid-cols-2 ${GLOBAL_DELIVERY_ROW_GRID_COLS} lg:items-center lg:py-4`}
+      className={`group grid gap-x-4 gap-y-2 px-5 py-3.5 transition hover:bg-[#F7FAF8] sm:grid-cols-2 ${GLOBAL_DELIVERY_ROW_GRID_COLS} lg:items-center`}
     >
       <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-1">
         <DeliveryStatusBadge status={message.status} />
 
-        <span className="ml-auto text-xs font-medium text-[#8A9990] lg:hidden">
+        <span className="ml-auto whitespace-nowrap text-xs font-medium text-[#718078] lg:hidden">
           {formatDateTime(message.created_at)}
         </span>
 
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EFF5F1] text-[#23613F] lg:hidden">
-          <ChevronRightIcon />
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#EFF5F1] text-[#23613F] lg:hidden">
+          <ChevronRightIcon className="h-3.5 w-3.5" />
         </span>
       </div>
 
@@ -59,14 +62,7 @@ function GlobalDeliveryRow({ message, backTo }: GlobalDeliveryRowProps) {
         <p className="truncate text-sm font-medium text-[#1F2A24]" title={message.endpoint.name}>
           {message.endpoint.name}
         </p>
-        <p className="mt-0.5 truncate text-xs font-medium text-[#8A9990]" title={message.endpoint.url}>
-          {message.endpoint.url}
-        </p>
-      </div>
-
-      <div className="min-w-0">
-        <p className={MOBILE_LABEL_CLASS}>Project</p>
-        <p className="truncate text-sm font-medium text-[#405348]" title={message.project.name}>
+        <p className="mt-0.5 truncate text-[11px] font-medium text-[#8A9990]" title={message.project.name}>
           {message.project.name}
         </p>
       </div>
@@ -75,9 +71,9 @@ function GlobalDeliveryRow({ message, backTo }: GlobalDeliveryRowProps) {
         <p className={MOBILE_LABEL_CLASS}>Result</p>
 
         {message.attempt_count === 0 ? (
-          <span className="text-xs font-medium text-[#8A9990]">No attempts yet</span>
-        ) : message.status === "delivering" && message.last_response_status === null && !message.last_error_type ? (
-          <span className="text-xs font-medium text-[#2563A8]">In progress</span>
+          <span className="text-xs font-medium text-[#8A9990]">Awaiting attempt</span>
+        ) : inProgress ? (
+          <span className="text-xs font-semibold text-[#2563A8]">In progress</span>
         ) : (
           <HttpStatusBadge status={message.last_response_status} errorType={message.last_error_type} />
         )}
@@ -89,9 +85,9 @@ function GlobalDeliveryRow({ message, backTo }: GlobalDeliveryRowProps) {
         )}
       </div>
 
-      <div>
+      <div className="min-w-0">
         <p className={MOBILE_LABEL_CLASS}>Attempts</p>
-        <p className="text-xs font-medium text-[#405348]">
+        <p className="text-xs font-semibold text-[#405348]">
           {message.attempt_count === 0 ? "—" : attemptLabel(message.attempt_count)}
         </p>
         {message.last_duration_ms !== null && (
@@ -99,18 +95,16 @@ function GlobalDeliveryRow({ message, backTo }: GlobalDeliveryRowProps) {
         )}
       </div>
 
-      <div className="hidden lg:block">
+      <div className="hidden min-w-0 lg:block">
         <p className="whitespace-nowrap text-xs font-medium text-[#405348]">{formatDateTime(message.created_at)}</p>
-        {message.last_attempt_at && (
-          <p className="mt-0.5 whitespace-nowrap text-[11px] font-medium text-[#8A9990]">
-            Attempt {formatDateTime(message.last_attempt_at)}
-          </p>
-        )}
+        <p className="mt-0.5 whitespace-nowrap text-[11px] font-medium text-[#8A9990]">
+          {message.last_attempt_at ? `Last attempt ${formatDateTime(message.last_attempt_at)}` : "No attempts yet"}
+        </p>
       </div>
 
       <div className="hidden justify-end lg:flex">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EFF5F1] text-[#23613F] transition group-hover:bg-[#214E35] group-hover:text-white">
-          <ChevronRightIcon />
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#EFF5F1] text-[#23613F] transition group-hover:bg-[#214E35] group-hover:text-white">
+          <ChevronRightIcon className="h-3.5 w-3.5" />
         </span>
       </div>
     </Link>
