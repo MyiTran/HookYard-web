@@ -74,7 +74,6 @@ function Pagination({
 
         {pageSizeOptions && typeof pageSize === "number" && onPageSizeChange && (
           <label className="flex items-center gap-2 text-xs font-medium text-[#8A9990]">
-            <span className="sr-only">Rows per page</span>
             <select
               value={pageSize}
               onChange={(event) => onPageSizeChange(Number(event.target.value))}
