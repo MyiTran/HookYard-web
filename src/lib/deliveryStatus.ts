@@ -48,8 +48,9 @@ export function deliveryLifecycleLabel(message: DeliveryLifecycleState): string 
   if (message.status === "succeeded") return "Delivered";
 
   const attemptsUsed = formatAttemptsUsed(message.attempt_count, message.max_attempts);
+  const attemptsLabel = typeof message.max_attempts === "number" ? "attempts" : attemptWord(message.attempt_count);
 
-  return `Failed after ${attemptsUsed} ${attemptWord(message.attempt_count)}`;
+  return `Failed after ${attemptsUsed} ${attemptsLabel}`;
 }
 
 export function attemptFailureShortLabel(errorType?: string | null): string {
