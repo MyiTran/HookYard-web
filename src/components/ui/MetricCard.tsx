@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
 
 type MetricTone = "blue" | "green" | "amber" | "purple" | "red";
 
@@ -8,8 +7,7 @@ type MetricCardProps = {
   value: string;
   tone: MetricTone;
   icon: ReactNode;
-  to?: string;
-  unavailable?: boolean;
+  loading?: boolean;
 };
 
 const TONE_STYLES: Record<MetricTone, { iconBg: string; iconText: string; value: string }> = {
@@ -23,36 +21,31 @@ const TONE_STYLES: Record<MetricTone, { iconBg: string; iconText: string; value:
 const CARD_BASE =
   "block rounded-[16px] border border-[#E4EBE6] bg-white p-4 shadow-[0_4px_16px_rgba(32,78,53,0.04)]";
 
-function MetricCard({ label, value, tone, icon, to, unavailable = false }: MetricCardProps) {
+function MetricCard({ label, value, tone, icon, loading = false }: MetricCardProps) {
   const styles = TONE_STYLES[tone];
 
-  const body = (
-    <>
+  if (loading) {
+    return (
+      <div className={CARD_BASE} aria-busy="true">
+        <span className="block h-9 w-9 animate-pulse rounded-[10px] bg-[#E4EBE6]" />
+        <span className="mt-3 block h-7 w-20 animate-pulse rounded bg-[#E4EBE6]" />
+        <span className="mt-2 block h-3 w-24 animate-pulse rounded bg-[#E4EBE6]" />
+      </div>
+    );
+  }
+
+  return (
+    <div className={CARD_BASE}>
       <span
         className={`flex h-9 w-9 items-center justify-center rounded-[10px] ${styles.iconBg} ${styles.iconText}`}
       >
         {icon}
       </span>
 
-      <p className={`mt-3 text-2xl font-semibold tracking-tight ${unavailable ? "text-[#9AA79F]" : styles.value}`}>
-        {value}
-      </p>
+      <p className={`mt-3 text-2xl font-semibold tracking-tight ${styles.value}`}>{value}</p>
       <p className="text-xs font-semibold text-[#53665A]">{label}</p>
-    </>
+    </div>
   );
-
-  if (to) {
-    return (
-      <Link
-        to={to}
-        className={`${CARD_BASE} cursor-pointer transition hover:border-[#C9DACE] hover:shadow-[0_8px_24px_rgba(32,78,53,0.08)]`}
-      >
-        {body}
-      </Link>
-    );
-  }
-
-  return <div className={CARD_BASE}>{body}</div>;
 }
 
 export default MetricCard;

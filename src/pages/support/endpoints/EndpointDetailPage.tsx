@@ -7,37 +7,24 @@ import EndpointStatusBadge from "../../../components/endpoints/EndpointStatusBad
 import EventSubscriptions from "../../../components/endpoints/EventSubscriptions";
 import EventSubscriptionsModal from "../../../components/endpoints/EventSubscriptionsModal";
 import SigningSecretDialog from "../../../components/endpoints/SigningSecretDialog";
+import SigningSecretHelp from "../../../components/endpoints/SigningSecretHelp";
 import AppLayout from "../../../components/layout/AppLayout";
 import ShieldIcon from "../../../components/icons/ShieldIcon";
 import RefreshIcon from "../../../components/icons/RefreshIcon";
 import Button from "../../../components/ui/Button";
 import ConfirmDialog from "../../../components/ui/ConfirmDialog";
+import ContextualHelp from "../../../components/ui/ContextualHelp";
 import { useToast } from "../../../components/ui/toastContext";
 import type { ApiResult } from "../../../lib/apiRequest";
 import { formatDateTime } from "../../../lib/dateFormat";
 import { archiveEndpoint, getEndpoint, rotateSigningSecret, updateEndpoint } from "../../../lib/endpointApi";
+import { readNavState } from "../../../lib/navState";
 import { getProject } from "../../../lib/projectApi";
 import type { Endpoint } from "../../../types/endpoint";
 import type { Project } from "../../../types/project";
 import type { CurrentUser } from "../../../types/user";
 
 const MASKED_SECRET = "••••••••••••••••";
-
-type EndpointNavState = {
-  from?: string;
-  fromLabel?: string;
-};
-
-function readNavState(state: unknown): EndpointNavState {
-  if (!state || typeof state !== "object") return {};
-
-  const record = state as Record<string, unknown>;
-
-  return {
-    from: typeof record.from === "string" ? record.from : undefined,
-    fromLabel: typeof record.fromLabel === "string" ? record.fromLabel : undefined,
-  };
-}
 
 function EndpointDetailPage() {
   const user = useOutletContext<CurrentUser>();
@@ -343,6 +330,10 @@ function EndpointDetailPage() {
                 <ShieldIcon className="h-4 w-4" />
               </span>
               <h2 className="text-sm font-semibold tracking-tight text-[#173D28]">Signing secret</h2>
+
+              <ContextualHelp label="Verify a webhook" title="Verify a webhook">
+                <SigningSecretHelp />
+              </ContextualHelp>
             </div>
 
             <p className="mt-3 text-sm font-medium text-[#53665A]">
@@ -382,7 +373,12 @@ function EndpointDetailPage() {
           </section>
         </div>
 
-        <DeliveryActivityPanel />
+        <DeliveryActivityPanel
+          projectId={projectId}
+          endpointId={endpointId}
+          endpointName={endpoint.name}
+          origin={navState}
+        />
 
         {showEdit && project && (
           <EndpointFormModal

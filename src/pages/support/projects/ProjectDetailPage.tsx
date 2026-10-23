@@ -1,11 +1,9 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate, useOutletContext, useParams } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
-import AlertTriangleIcon from "../../../components/icons/AlertTriangleIcon";
-import BoltIcon from "../../../components/icons/BoltIcon";
-import CheckCircleIcon from "../../../components/icons/CheckCircleIcon";
-import PlugIcon from "../../../components/icons/PlugIcon";
 import ProjectEndpointsPanel from "../../../components/endpoints/ProjectEndpointsPanel";
+import ProjectApiKeysPanel from "../../../components/projects/ProjectApiKeysPanel";
+import ProjectMetrics from "../../../components/projects/ProjectMetrics";
 import CollaboratorsList from "../../../components/projects/CollaboratorsList";
 import InviteCollaboratorModal from "../../../components/projects/InviteCollaboratorModal";
 import PendingInvitationsList from "../../../components/projects/PendingInvitationsList";
@@ -13,7 +11,6 @@ import ProjectFormModal from "../../../components/projects/ProjectFormModal";
 import RoleBadge from "../../../components/projects/RoleBadge";
 import Button from "../../../components/ui/Button";
 import ConfirmDialog from "../../../components/ui/ConfirmDialog";
-import MetricCard from "../../../components/ui/MetricCard";
 import { useToast } from "../../../components/ui/toastContext";
 import { useNotifications } from "../../../hooks/notificationsContext";
 import { formatUserName } from "../../../lib/currentUser";
@@ -313,12 +310,9 @@ function ProjectDetailPage() {
           </dl>
         </section>
 
-        <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard tone="blue" label="Endpoints" value="—" unavailable icon={<PlugIcon />} />
-          <MetricCard tone="purple" label="Events" value="—" unavailable icon={<BoltIcon />} />
-          <MetricCard tone="green" label="Success rate" value="—" unavailable icon={<CheckCircleIcon />} />
-          <MetricCard tone="red" label="Failed deliveries" value="—" unavailable icon={<AlertTriangleIcon />} />
-        </section>
+        <ProjectMetrics projectId={project.id} />
+
+        {isOwner && <ProjectApiKeysPanel key={project.id} project={project} />}
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
           <ProjectEndpointsPanel project={project} />

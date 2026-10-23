@@ -3,10 +3,11 @@ import { Link, useLocation } from "react-router-dom";
 import Brand from "../branding/Brand";
 import Button from "../ui/Button";
 import { API_URL } from "../../config";
+import { readNavValue } from "../../lib/navState";
 import type { CurrentUser } from "../../types/user";
 import MenuIcon from "./MenuIcon";
 
-type SidebarProps = { user: CurrentUser; };
+type SidebarProps = { user: CurrentUser; onNavigate?: () => void; className?: string };
 
 type MenuItem = { name: string; path: string; exact?: boolean };
 
@@ -16,12 +17,13 @@ function isMenuActive(currentPath: string, item: MenuItem): boolean {
   return currentPath === item.path || currentPath.startsWith(`${item.path}/`);
 }
 
-function Sidebar({ user }: SidebarProps) {
+function Sidebar({ user, onNavigate, className = "" }: SidebarProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const isAdmin = user.role === "admin";
   
   const location = useLocation();
-  const currentPath = location.pathname;
+  const section = readNavValue(location.state, "section");
+  const currentPath = section ? `/${section}` : location.pathname;
 
   const menuItems: MenuItem[] = isAdmin
     ? [
@@ -56,7 +58,7 @@ function Sidebar({ user }: SidebarProps) {
   }
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col overflow-y-auto bg-[#CFE0D3] px-6 py-8">
+    <aside className={`flex w-full flex-col overflow-y-auto bg-[#CFE0D3] px-6 py-8 ${className}`}>
       <div>
         <h1 className="text-2xl font-bold tracking-tight">
           <Brand />
@@ -74,6 +76,7 @@ function Sidebar({ user }: SidebarProps) {
             <Link
               key={item.name}
               to={item.path}
+              onClick={onNavigate}
               className={active ? "flex h-12 items-center gap-3 rounded-xl bg-[#B6CEBC] px-4 font-semibold text-[#173D28]" : "flex h-12 items-center gap-3 rounded-xl px-4 font-medium text-[#405348] transition hover:bg-[#C1D5C6] hover:text-[#173D28]"}
             >
               <MenuIcon name={item.name} />

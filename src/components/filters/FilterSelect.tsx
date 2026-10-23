@@ -8,17 +8,21 @@ type FilterSelectProps = {
   options: FilterSelectOption[];
   ariaLabel: string;
   id?: string;
+  className?: string;
 };
 
-function FilterSelect({ value, onChange, options, ariaLabel, id }: FilterSelectProps) {
+function FilterSelect({ value, onChange, options, ariaLabel, id, className = "" }: FilterSelectProps) {
+  const selectedLabel = options.find((option) => option.value === value)?.label;
+
   return (
-    <div className="relative">
+    <div className={`relative min-w-0 ${className}`}>
       <select
         id={id}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         aria-label={ariaLabel}
-        className="h-11 w-full cursor-pointer appearance-none rounded-xl border border-[#C9DACE] bg-white pl-4 pr-11 text-sm font-medium text-[#405348] outline-none transition focus:border-[#23613F] focus:ring-2 focus:ring-[#23613F]/10"
+        title={selectedLabel}
+        className="h-11 w-full cursor-pointer appearance-none truncate rounded-xl border border-[#C9DACE] bg-white py-0 pl-4 pr-11 text-sm font-medium text-[#405348] outline-none transition focus:border-[#23613F] focus:ring-2 focus:ring-[#23613F]/10"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>

@@ -11,6 +11,8 @@ import LoginPage from "./pages/auth/LoginPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import SignupPage from "./pages/auth/SignupPage";
 import SupportDashboardPage from "./pages/support/dashboard/DashboardPage";
+import DeliveriesPage from "./pages/support/deliveries/DeliveriesPage";
+import MessageDetailPage from "./pages/support/deliveries/MessageDetailPage";
 import EndpointDetailPage from "./pages/support/endpoints/EndpointDetailPage";
 import EndpointsPage from "./pages/support/endpoints/EndpointsPage";
 import ProjectDetailPage from "./pages/support/projects/ProjectDetailPage";
@@ -120,7 +122,12 @@ function App() {
         <Route path="/projects" element={<ProjectsPage />} />
         <Route path="/projects/:id" element={<ProjectDetailPage />} />
         <Route path="/endpoints" element={<EndpointsPage />} />
+        <Route path="/deliveries" element={<DeliveriesPage />} />
         <Route path="/projects/:projectId/endpoints/:endpointId" element={<EndpointDetailPage />} />
+        <Route
+          path="/projects/:projectId/endpoints/:endpointId/deliveries/:messageId"
+          element={<MessageDetailPage />}
+        />
         <Route path="/admin" element={<AdminRoute />} />
       </Route>
 
