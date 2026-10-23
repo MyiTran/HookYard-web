@@ -11,6 +11,10 @@ export type DeliveryMessageSummary = {
   created_at: string;
   updated_at: string;
   attempt_count: number;
+  max_attempts: number | null;
+  next_retry_at: string | null;
+  terminal_at: string | null;
+  retryable: boolean;
   last_attempt_at: string | null;
   last_response_status: number | null;
   last_duration_ms: number | null;
@@ -95,6 +99,10 @@ export type DeliveryMessageDetail = {
   created_at: string;
   updated_at: string;
   attempt_count: number;
+  max_attempts: number | null;
+  next_retry_at: string | null;
+  terminal_at: string | null;
+  retryable: boolean;
   event: DeliveryEvent;
   endpoint: DeliveryEndpointRef;
   attempts: DeliveryAttempt[];

@@ -1,3 +1,5 @@
+import { attemptFailureShortLabel } from "../../lib/deliveryStatus";
+
 type HttpStatusBadgeProps = {
   status: number | null;
   errorType?: string | null;
@@ -23,8 +25,12 @@ function toneFor(status: number): keyof typeof TONE_CLASSES {
 function HttpStatusBadge({ status, errorType }: HttpStatusBadgeProps) {
   if (status === null) {
     return (
-      <span className={`inline-flex rounded-md px-1.5 py-0.5 text-xs font-semibold ${TONE_CLASSES.neutral}`}>
-        {errorType ? "No HTTP response" : "—"}
+      <span
+        className={`inline-flex rounded-md px-1.5 py-0.5 text-xs font-semibold ${
+          errorType ? TONE_CLASSES.clientError : TONE_CLASSES.neutral
+        }`}
+      >
+        {attemptFailureShortLabel(errorType)}
       </span>
     );
   }
