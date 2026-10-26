@@ -56,7 +56,9 @@ export type GlobalDeliveryMessageSummary = DeliveryMessageSummary & {
 
 export type DeliveryOrder = "created_desc" | "created_asc";
 
-export type DeliveryStatusFilter = "all" | MessageStatus;
+export type DeliveryStateFilter = Extract<DeliveryState, "held_by_circuit">;
+
+export type DeliveryStatusFilter = "all" | MessageStatus | DeliveryStateFilter;
 
 export type DeliveryFilters = {
   q: string;

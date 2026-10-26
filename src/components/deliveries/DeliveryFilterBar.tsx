@@ -58,6 +58,7 @@ const STATUS_OPTIONS: { value: DeliveryStatusFilter; label: string }[] = [
   { value: "delivering", label: "Delivering" },
   { value: "succeeded", label: "Succeeded" },
   { value: "failed", label: "Failed" },
+  { value: "held_by_circuit", label: "Held by circuit" },
 ];
 
 const ORDER_OPTIONS: { value: DeliveryOrder; label: string }[] = [
@@ -71,6 +72,7 @@ const STATUS_LABELS: Record<DeliveryStatusFilter, string> = {
   delivering: "Delivering",
   succeeded: "Succeeded",
   failed: "Failed",
+  held_by_circuit: "Held by circuit",
 };
 
 const TEXT_INPUT_CLASS =
