@@ -1,8 +1,10 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { DELIVERIES_PAGE_SIZE, listEndpointMessages } from "../../lib/deliveryApi";
+import { formatCount } from "../../lib/numberFormat";
 import type { NavState } from "../../lib/navState";
 import type { DeliveryMessageSummary } from "../../types/delivery";
+import type { EndpointCircuitState } from "../../types/endpoint";
 import type { PaginationMeta } from "../../types/pagination";
 import ActivityIcon from "../icons/ActivityIcon";
 import Button from "../ui/Button";
@@ -14,6 +16,8 @@ type DeliveryActivityPanelProps = {
   endpointId: string;
   endpointName: string;
   origin: NavState;
+  heldMessageCount?: number;
+  circuitState?: EndpointCircuitState;
 };
 
 function readPage(value: string | null): number {
@@ -22,7 +26,14 @@ function readPage(value: string | null): number {
   return Number.isInteger(parsed) && parsed > 1 ? parsed : 1;
 }
 
-function DeliveryActivityPanel({ projectId, endpointId, endpointName, origin }: DeliveryActivityPanelProps) {
+function DeliveryActivityPanel({
+  projectId,
+  endpointId,
+  endpointName,
+  origin,
+  heldMessageCount = 0,
+  circuitState,
+}: DeliveryActivityPanelProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const page = readPage(searchParams.get("deliveries_page"));
 
@@ -160,6 +171,14 @@ function DeliveryActivityPanel({ projectId, endpointId, endpointName, origin }: 
           </p>
         )}
       </div>
+
+      {heldMessageCount > 0 && (
+        <div className="mt-4 rounded-xl border border-[#E8D5B5] bg-[#FBF7EC] px-4 py-3 text-sm font-medium text-[#8A5D14]">
+          {formatCount(heldMessageCount)}{" "}
+          {heldMessageCount === 1 ? "delivery is" : "deliveries are"} waiting while{" "}
+          {circuitState === "disabled" ? "delivery is disabled" : "circuit protection is active"}.
+        </div>
+      )}
 
       <div className="mt-4">{body}</div>
 

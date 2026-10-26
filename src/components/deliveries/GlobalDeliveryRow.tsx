@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import { formatDateTime } from "../../lib/dateFormat";
-import { formatAttemptProgress } from "../../lib/deliveryStatus";
+import { formatAttemptProgress, heldDeliveryLabel } from "../../lib/deliveryStatus";
 import { formatDuration } from "../../lib/durationFormat";
 import type { GlobalDeliveryMessageSummary } from "../../types/delivery";
 import ChevronRightIcon from "../icons/ChevronRightIcon";
+import DeliveryHoldBadge from "./DeliveryHoldBadge";
 import DeliveryLifecycleText from "./DeliveryLifecycleText";
 import DeliveryStatusBadge from "./DeliveryStatusBadge";
 import HttpStatusBadge from "./HttpStatusBadge";
@@ -40,8 +41,19 @@ function GlobalDeliveryRow({ message, backTo }: GlobalDeliveryRowProps) {
     >
       <div className="flex items-start gap-2 sm:col-span-2 lg:col-span-1 lg:items-center">
         <div className="min-w-0">
-          <DeliveryStatusBadge status={message.status} />
-          <DeliveryLifecycleText message={message} className="mt-1 block text-[11px] leading-snug" />
+          {message.hold ? (
+            <>
+              <DeliveryHoldBadge hold={message.hold} />
+              <p className="mt-1 block text-[11px] font-semibold leading-snug text-[#9A6B1F]">
+                {heldDeliveryLabel(message.hold)}
+              </p>
+            </>
+          ) : (
+            <>
+              <DeliveryStatusBadge status={message.status} />
+              <DeliveryLifecycleText message={message} className="mt-1 block text-[11px] leading-snug" />
+            </>
+          )}
         </div>
 
         <span className="ml-auto whitespace-nowrap text-xs font-medium text-[#718078] lg:hidden">{receivedAt}</span>

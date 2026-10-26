@@ -1,5 +1,20 @@
 export type MessageStatus = "pending" | "delivering" | "succeeded" | "failed";
 
+export type DeliveryState =
+  | "queued"
+  | "scheduled_retry"
+  | "held_by_circuit"
+  | "delivering"
+  | "terminal";
+
+export type DeliveryHoldReason = "endpoint_circuit_open" | "endpoint_disabled";
+
+export type DeliveryHold = {
+  reason: DeliveryHoldReason;
+  since: string;
+  release_at: string | null;
+};
+
 export type AttemptStatus = "succeeded" | "failed";
 
 export type DeliveryMessageSummary = {
@@ -15,6 +30,8 @@ export type DeliveryMessageSummary = {
   next_retry_at: string | null;
   terminal_at: string | null;
   retryable: boolean;
+  delivery_state?: DeliveryState;
+  hold?: DeliveryHold | null;
   last_attempt_at: string | null;
   last_response_status: number | null;
   last_duration_ms: number | null;
@@ -103,6 +120,8 @@ export type DeliveryMessageDetail = {
   next_retry_at: string | null;
   terminal_at: string | null;
   retryable: boolean;
+  delivery_state?: DeliveryState;
+  hold?: DeliveryHold | null;
   event: DeliveryEvent;
   endpoint: DeliveryEndpointRef;
   attempts: DeliveryAttempt[];

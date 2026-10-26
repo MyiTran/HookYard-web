@@ -1,0 +1,35 @@
+import type { EndpointCircuit } from "../../types/endpoint";
+import AlertTriangleIcon from "../icons/AlertTriangleIcon";
+import ShieldIcon from "../icons/ShieldIcon";
+import Badge from "../ui/Badge";
+
+type EndpointCircuitBadgeProps = {
+  circuit?: Pick<EndpointCircuit, "state"> | null;
+  archived?: boolean;
+};
+
+function EndpointCircuitBadge({ circuit, archived = false }: EndpointCircuitBadgeProps) {
+  if (!circuit || archived || circuit.state === "enabled") return null;
+
+  if (circuit.state === "circuit_open") {
+    return (
+      <Badge tone="amber" dot>
+        <span aria-hidden="true">
+          <ShieldIcon className="h-3.5 w-3.5" />
+        </span>
+        Circuit open
+      </Badge>
+    );
+  }
+
+  return (
+    <Badge tone="red" dot>
+      <span aria-hidden="true">
+        <AlertTriangleIcon className="h-3.5 w-3.5" />
+      </span>
+      Delivery disabled
+    </Badge>
+  );
+}
+
+export default EndpointCircuitBadge;

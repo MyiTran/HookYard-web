@@ -1,4 +1,4 @@
-import type { MessageStatus } from "../types/delivery";
+import type { DeliveryHold, DeliveryState, MessageStatus } from "../types/delivery";
 import { formatDateTime } from "./dateFormat";
 
 type DeliveryLifecycleState = {
@@ -7,6 +7,8 @@ type DeliveryLifecycleState = {
   max_attempts?: number | null;
   next_retry_at?: string | null;
   retryable?: boolean;
+  delivery_state?: DeliveryState;
+  hold?: DeliveryHold | null;
 };
 
 const LEASE_EXPIRED_ERROR_TYPE = "DeliveryLeaseExpired";
@@ -31,7 +33,19 @@ export function formatAttemptsUsed(attemptCount: number, maxAttempts?: number | 
   return `${attemptCount} of ${maxAttempts}`;
 }
 
+export function isHeldDelivery(message: { delivery_state?: DeliveryState; hold?: DeliveryHold | null }): boolean {
+  return message.delivery_state === "held_by_circuit" || Boolean(message.hold);
+}
+
+export function heldDeliveryLabel(hold: DeliveryHold): string {
+  if (hold.reason === "endpoint_disabled") return "Held — endpoint delivery disabled";
+
+  return "Held — endpoint circuit open";
+}
+
 export function deliveryLifecycleLabel(message: DeliveryLifecycleState): string {
+  if (isHeldDelivery(message) && message.hold) return heldDeliveryLabel(message.hold);
+
   if (message.status === "pending") {
     if (message.next_retry_at) {
       const scheduledAt = formatDateTime(message.next_retry_at);

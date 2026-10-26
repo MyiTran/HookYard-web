@@ -77,3 +77,7 @@ export function rotateSigningSecret(
     "POST",
   );
 }
+
+export function reEnableEndpointDelivery(projectId: string, endpointId: string): Promise<ApiResult<Endpoint>> {
+  return apiRequest<Endpoint>(`/projects/${projectId}/endpoints/${endpointId}/re_enable`, "POST");
+}

@@ -3,6 +3,27 @@ export type EndpointProject = {
   name: string;
 };
 
+export type EndpointCircuitState = "enabled" | "circuit_open" | "disabled";
+
+export type EndpointCircuit = {
+  state: EndpointCircuitState;
+  opened_at: string | null;
+  failure_count: number;
+  failure_threshold: number;
+  disable_window_ends_at: string | null;
+  next_probe_at: string | null;
+  probe_in_flight: boolean;
+  held_message_count: number;
+};
+
+export type EndpointQueueState = "ok" | "warning" | "full";
+
+export type EndpointQueue = {
+  state: EndpointQueueState;
+  queued_count: number;
+  capacity: number;
+};
+
 export type Endpoint = {
   id: string;
   name: string;
@@ -16,6 +37,8 @@ export type Endpoint = {
   has_signing_secret: boolean;
   signing_secret_version: number;
   signing_secret_last_rotated_at: string | null;
+  circuit?: EndpointCircuit;
+  queue?: EndpointQueue;
   project: EndpointProject;
 };
 

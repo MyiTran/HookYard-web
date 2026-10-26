@@ -1,18 +1,22 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation, useOutletContext, useParams } from "react-router-dom";
 import AttemptCard from "../../../components/deliveries/AttemptCard";
+import DeliveryHoldBadge from "../../../components/deliveries/DeliveryHoldBadge";
 import DeliveryLifecycleText from "../../../components/deliveries/DeliveryLifecycleText";
 import DeliveryStatusBadge from "../../../components/deliveries/DeliveryStatusBadge";
+import EndpointCircuitBadge from "../../../components/endpoints/EndpointCircuitBadge";
 import HttpStatusBadge from "../../../components/deliveries/HttpStatusBadge";
 import PayloadBlock from "../../../components/deliveries/PayloadBlock";
 import AppLayout from "../../../components/layout/AppLayout";
 import CopyButton from "../../../components/ui/CopyButton";
 import { formatDateTime } from "../../../lib/dateFormat";
-import { formatAttemptsUsed } from "../../../lib/deliveryStatus";
+import { formatAttemptsUsed, heldDeliveryLabel } from "../../../lib/deliveryStatus";
 import { getDeliveryMessage } from "../../../lib/deliveryApi";
+import { getEndpoint } from "../../../lib/endpointApi";
 import { formatDuration } from "../../../lib/durationFormat";
 import { readNavValue } from "../../../lib/navState";
 import type { DeliveryMessageDetail } from "../../../types/delivery";
+import type { EndpointCircuit } from "../../../types/endpoint";
 import type { CurrentUser } from "../../../types/user";
 
 function MessageDetailPage() {
@@ -21,6 +25,8 @@ function MessageDetailPage() {
   const { projectId = "", endpointId = "", messageId = "" } = useParams();
 
   const [message, setMessage] = useState<DeliveryMessageDetail | null>(null);
+  const [endpointCircuit, setEndpointCircuit] = useState<EndpointCircuit | undefined>(undefined);
+  const [endpointArchived, setEndpointArchived] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [unavailable, setUnavailable] = useState(false);
@@ -37,9 +43,17 @@ function MessageDetailPage() {
     let cancelled = false;
 
     async function load() {
-      const result = await getDeliveryMessage(projectId, messageId);
+      const [result, endpointResult] = await Promise.all([
+        getDeliveryMessage(projectId, messageId),
+        getEndpoint(projectId, endpointId),
+      ]);
 
       if (cancelled) return;
+
+      if (endpointResult.ok) {
+        setEndpointCircuit(endpointResult.data.circuit);
+        setEndpointArchived(Boolean(endpointResult.data.archived_at));
+      }
 
       if (!result.ok) {
         setUnavailable(result.status === 404 || result.status === 403);
@@ -57,7 +71,7 @@ function MessageDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [projectId, messageId]);
+  }, [projectId, endpointId, messageId]);
 
   let body: ReactNode;
 
@@ -97,7 +111,11 @@ function MessageDetailPage() {
               <h1 className="min-w-0 truncate text-3xl font-semibold tracking-tight" title={message.event.event_type}>
                 {message.event.event_type}
               </h1>
-              <DeliveryStatusBadge status={message.status} />
+              {message.hold ? (
+                <DeliveryHoldBadge hold={message.hold} />
+              ) : (
+                <DeliveryStatusBadge status={message.status} />
+              )}
             </div>
 
             <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-[#53665A]">
@@ -116,10 +134,21 @@ function MessageDetailPage() {
             <div className="min-w-0">
               <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Status</dt>
               <dd className="mt-1 space-y-1.5">
-                <DeliveryStatusBadge status={message.status} />
-                <p className="text-xs leading-snug">
-                  <DeliveryLifecycleText message={message} />
-                </p>
+                {message.hold ? (
+                  <>
+                    <DeliveryHoldBadge hold={message.hold} />
+                    <p className="text-xs font-semibold leading-snug text-[#9A6B1F]">
+                      {heldDeliveryLabel(message.hold)}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <DeliveryStatusBadge status={message.status} />
+                    <p className="text-xs leading-snug">
+                      <DeliveryLifecycleText message={message} />
+                    </p>
+                  </>
+                )}
               </dd>
             </div>
 
@@ -193,6 +222,51 @@ function MessageDetailPage() {
               </dd>
             </div>
           </dl>
+
+          {message.hold && (
+            <div className="mt-5 rounded-xl border border-[#E8D5B5] bg-[#FBF7EC] px-4 py-3.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <DeliveryHoldBadge hold={message.hold} />
+                <span className="text-sm font-semibold text-[#8A5D14]">{heldDeliveryLabel(message.hold)}</span>
+              </div>
+
+              <dl className="mt-3 flex flex-wrap gap-x-8 gap-y-2">
+                <div>
+                  <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
+                    Waiting since
+                  </dt>
+                  <dd className="mt-1 text-xs font-semibold text-[#1F2A24]">
+                    {formatDateTime(message.hold.since)}
+                  </dd>
+                </div>
+
+                {(message.hold.release_at || endpointCircuit?.next_probe_at) && (
+                  <div>
+                    <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
+                      Next receiver check
+                    </dt>
+                    <dd className="mt-1 text-xs font-semibold text-[#1F2A24]">
+                      {formatDateTime(message.hold.release_at ?? endpointCircuit?.next_probe_at ?? "")}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+
+              <p className="mt-3 text-xs font-medium text-[#6B5A35]">
+                {endpointCircuit?.state === "disabled"
+                  ? "Automatic delivery is disabled. A project owner must re-enable delivery before this message can be sent."
+                  : "HookYard has not sent this request yet because delivery is being protected. Held deliveries are released after the receiver recovers."}
+              </p>
+
+              <Link
+                to={endpointPath}
+                state={endpointOrigin}
+                className="mt-2 inline-flex text-xs font-semibold text-[#23613F] transition hover:underline"
+              >
+                View endpoint protection
+              </Link>
+            </div>
+          )}
         </section>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
@@ -239,7 +313,7 @@ function MessageDetailPage() {
             <dl className="mt-4 space-y-4">
               <div>
                 <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Endpoint</dt>
-                <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">
+                <dd className="mt-1 flex flex-wrap items-center gap-2 text-sm font-semibold text-[#1F2A24]">
                   <Link
                     to={endpointPath}
                     state={endpointOrigin}
@@ -247,6 +321,7 @@ function MessageDetailPage() {
                   >
                     {message.endpoint.name}
                   </Link>
+                  <EndpointCircuitBadge circuit={endpointCircuit} archived={endpointArchived} />
                 </dd>
               </div>
 
@@ -288,7 +363,9 @@ function MessageDetailPage() {
             <div className="mt-4 rounded-[14px] border border-dashed border-[#D2DAD5] bg-[#F2F4F3] px-6 py-10 text-center">
               <p className="text-sm font-semibold text-[#1F2A24]">No delivery attempts yet</p>
               <p className="mx-auto mt-1 max-w-sm text-xs font-medium text-[#8A9990]">
-                Attempts will appear here once HookYard starts delivering this message.
+                {message.hold
+                  ? "HookYard has not sent this request yet because delivery is being protected. Attempts will appear after the receiver recovers."
+                  : "Attempts will appear here once HookYard starts delivering this message."}
               </p>
             </div>
           ) : (

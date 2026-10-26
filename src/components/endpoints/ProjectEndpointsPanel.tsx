@@ -7,6 +7,7 @@ import type { Project } from "../../types/project";
 import Button from "../ui/Button";
 import Pagination from "../ui/Pagination";
 import { useToast } from "../ui/toastContext";
+import EndpointCircuitBadge from "./EndpointCircuitBadge";
 import EndpointFormModal, { type EndpointFormValues } from "./EndpointFormModal";
 import EndpointStatusBadge from "./EndpointStatusBadge";
 import SigningSecretDialog from "./SigningSecretDialog";
@@ -76,7 +77,7 @@ function ProjectEndpointsPanel({ project }: ProjectEndpointsPanelProps) {
   const isOwner = project.current_user_role === "owner";
 
   return (
-    <section className="rounded-[18px] border border-[#D8E3DB] bg-white p-5 shadow-[0_8px_30px_rgba(32,78,53,0.05)] lg:col-span-2">
+    <section className="min-w-0 rounded-[18px] border border-[#D8E3DB] bg-white p-5 shadow-[0_8px_30px_rgba(32,78,53,0.05)] lg:col-span-2">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Endpoints</h2>
 
@@ -106,14 +107,17 @@ function ProjectEndpointsPanel({ project }: ProjectEndpointsPanelProps) {
                 key={endpoint.id}
                 to={`/projects/${project.id}/endpoints/${endpoint.id}`}
                 state={{ from: `/projects/${project.id}`, fromLabel: project.name }}
-                className="flex items-center justify-between gap-4 py-3 transition hover:opacity-80"
+                className="flex min-w-0 items-center justify-between gap-4 py-3 transition hover:opacity-80"
               >
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-semibold text-[#1F2A24]">{endpoint.name}</span>
                   <span className="block truncate text-xs font-medium text-[#8A9990]">{endpoint.url}</span>
                 </span>
 
-                <EndpointStatusBadge active={endpoint.active} archived={Boolean(endpoint.archived_at)} />
+                <span className="flex min-w-0 flex-wrap items-center justify-end gap-2">
+                  <EndpointStatusBadge active={endpoint.active} archived={Boolean(endpoint.archived_at)} />
+                  <EndpointCircuitBadge circuit={endpoint.circuit} archived={Boolean(endpoint.archived_at)} />
+                </span>
               </Link>
             ))}
           </div>
