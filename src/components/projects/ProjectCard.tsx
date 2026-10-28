@@ -1,11 +1,13 @@
 import { Link } from "react-router-dom";
 import ChevronRightIcon from "../icons/ChevronRightIcon";
 import { formatDateTime } from "../../lib/dateFormat";
+import type { ProjectMetrics } from "../../lib/projectMetrics";
 import type { Project } from "../../types/project";
 import RoleBadge from "./RoleBadge";
 
 type ProjectCardProps = {
   project: Project;
+  metrics: ProjectMetrics | undefined;
 };
 
 type ProjectStatTone = "blue" | "green" | "purple" | "red";
@@ -13,6 +15,7 @@ type ProjectStatTone = "blue" | "green" | "purple" | "red";
 type ProjectStat = {
   label: string;
   tone: ProjectStatTone;
+  value: string;
 };
 
 const STAT_TONES: Record<ProjectStatTone, string> = {
@@ -22,17 +25,21 @@ const STAT_TONES: Record<ProjectStatTone, string> = {
   red: "text-[#9B2018]",
 };
 
-const PROJECT_STATS: ProjectStat[] = [
-  { label: "Endpoints", tone: "blue" },
-  { label: "Events", tone: "purple" },
-  { label: "Success", tone: "green" },
-  { label: "Failed", tone: "red" },
-];
-
 export const PROJECT_ROW_GRID_COLS =
   "grid-cols-2 lg:grid-cols-[minmax(0,1.7fr)_0.9fr_0.7fr_0.7fr_0.7fr_0.7fr_1fr_2rem]";
 
-function ProjectCard({ project }: ProjectCardProps) {
+function projectStats(metrics: ProjectMetrics | undefined): ProjectStat[] {
+  return [
+    { label: "Endpoints", tone: "blue", value: metrics ? String(metrics.endpointCount) : "—" },
+    { label: "Events", tone: "purple", value: metrics ? String(metrics.eventCount) : "—" },
+    { label: "Success", tone: "green", value: metrics?.successRate == null ? "—" : `${metrics.successRate}%` },
+    { label: "Failed", tone: "red", value: metrics ? String(metrics.failedCount) : "—" },
+  ];
+}
+
+function ProjectCard({ project, metrics }: ProjectCardProps) {
+  const stats = projectStats(metrics);
+
   return (
     <Link
       to={`/projects/${project.id}`}
@@ -50,10 +57,12 @@ function ProjectCard({ project }: ProjectCardProps) {
         )}
       </div>
 
-      {PROJECT_STATS.map((stat) => (
+      {stats.map((stat) => (
         <div key={stat.label} className="flex items-baseline gap-1.5 whitespace-nowrap text-xs">
           <span className={`font-medium lg:hidden ${STAT_TONES[stat.tone]}`}>{stat.label}</span>
-          <span className="font-semibold text-[#AEB9B2]">—</span>
+          <span className={metrics ? "font-semibold text-[#405348]" : "font-semibold text-[#AEB9B2]"}>
+            {stat.value}
+          </span>
         </div>
       ))}
 

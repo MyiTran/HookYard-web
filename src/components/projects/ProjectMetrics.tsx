@@ -82,7 +82,7 @@ function ProjectMetrics({ projectId }: ProjectMetricsProps) {
       <MetricCard
         tone="green"
         label="Success rate"
-        value={`${metrics?.successRate ?? 0}%`}
+        value={metrics?.successRate == null ? "—" : `${metrics.successRate}%`}
         loading={loading}
         icon={<CheckCircleIcon />}
       />

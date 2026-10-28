@@ -1,12 +1,14 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation, useOutletContext, useParams } from "react-router-dom";
 import AttemptCard from "../../../components/deliveries/AttemptCard";
+import DeliveryLifecycleText from "../../../components/deliveries/DeliveryLifecycleText";
 import DeliveryStatusBadge from "../../../components/deliveries/DeliveryStatusBadge";
 import HttpStatusBadge from "../../../components/deliveries/HttpStatusBadge";
 import PayloadBlock from "../../../components/deliveries/PayloadBlock";
 import AppLayout from "../../../components/layout/AppLayout";
 import CopyButton from "../../../components/ui/CopyButton";
 import { formatDateTime } from "../../../lib/dateFormat";
+import { formatAttemptsUsed } from "../../../lib/deliveryStatus";
 import { getDeliveryMessage } from "../../../lib/deliveryApi";
 import { formatDuration } from "../../../lib/durationFormat";
 import { readNavValue } from "../../../lib/navState";
@@ -108,7 +110,43 @@ function MessageDetailPage() {
         </header>
 
         <section className="mt-5 rounded-[18px] border border-[#D8E3DB] bg-white p-5 shadow-[0_8px_30px_rgba(32,78,53,0.05)]">
-          <dl className="grid gap-x-8 gap-y-4 sm:grid-cols-2 xl:grid-cols-4">
+          <h2 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Delivery status</h2>
+
+          <dl className="mt-4 grid gap-x-8 gap-y-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="min-w-0">
+              <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Status</dt>
+              <dd className="mt-1 space-y-1.5">
+                <DeliveryStatusBadge status={message.status} />
+                <p className="text-xs leading-snug">
+                  <DeliveryLifecycleText message={message} />
+                </p>
+              </dd>
+            </div>
+
+            <div className="min-w-0">
+              <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Attempts used</dt>
+              <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">
+                {formatAttemptsUsed(message.attempt_count, message.max_attempts)}
+                <p className="mt-0.5 text-xs font-medium text-[#8A9990]">
+                  {latestAttempt ? `Latest ${formatDateTime(latestAttempt.created_at)}` : "No attempts yet"}
+                </p>
+              </dd>
+            </div>
+
+            {message.next_retry_at && (
+              <div className="min-w-0">
+                <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Next retry</dt>
+                <dd className="mt-1 text-sm font-semibold text-[#9A6B1F]">{formatDateTime(message.next_retry_at)}</dd>
+              </div>
+            )}
+
+            {message.terminal_at && (
+              <div className="min-w-0">
+                <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Completed</dt>
+                <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{formatDateTime(message.terminal_at)}</dd>
+              </div>
+            )}
+
             <div className="min-w-0">
               <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Endpoint</dt>
               <dd className="mt-1 min-w-0">
@@ -131,16 +169,6 @@ function MessageDetailPage() {
             <div className="min-w-0">
               <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Received</dt>
               <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{formatDateTime(message.created_at)}</dd>
-            </div>
-
-            <div className="min-w-0">
-              <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Attempts</dt>
-              <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">
-                {message.attempt_count}
-                <p className="mt-0.5 text-xs font-medium text-[#8A9990]">
-                  {latestAttempt ? `Latest ${formatDateTime(latestAttempt.created_at)}` : "No attempts yet"}
-                </p>
-              </dd>
             </div>
 
             <div className="min-w-0">
@@ -246,7 +274,9 @@ function MessageDetailPage() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Attempt history</h2>
-              <p className="mt-1 text-xs font-medium text-[#8A9990]">Each HTTP attempt made for this message.</p>
+              <p className="mt-1 text-xs font-medium text-[#8A9990]">
+                Oldest first. Each HTTP attempt recorded for this message.
+              </p>
             </div>
 
             <p className="text-xs font-medium text-[#8A9990]">
