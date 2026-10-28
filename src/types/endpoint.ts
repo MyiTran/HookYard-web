@@ -5,6 +5,22 @@ export type EndpointProject = {
 
 export type EndpointCircuitState = "enabled" | "circuit_open" | "disabled";
 
+export type EndpointCircuitProbeStatus = "pending" | "succeeded" | "failed";
+
+export type EndpointCircuitProbe = {
+  id: string;
+  status: EndpointCircuitProbeStatus;
+  request_id: string;
+  webhook_id: string;
+  signing_secret_version: number | null;
+  started_at: string;
+  completed_at: string | null;
+  response_status: number | null;
+  duration_ms: number | null;
+  error_type: string | null;
+  error_message: string | null;
+};
+
 export type EndpointCircuit = {
   state: EndpointCircuitState;
   opened_at: string | null;
@@ -14,6 +30,7 @@ export type EndpointCircuit = {
   next_probe_at: string | null;
   probe_in_flight: boolean;
   held_message_count: number;
+  last_probe?: EndpointCircuitProbe | null;
 };
 
 export type EndpointQueueState = "ok" | "warning" | "full";

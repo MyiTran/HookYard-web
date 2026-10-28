@@ -6,10 +6,19 @@ import Badge from "../ui/Badge";
 type EndpointCircuitBadgeProps = {
   circuit?: Pick<EndpointCircuit, "state"> | null;
   archived?: boolean;
+  showEnabled?: boolean;
 };
 
-function EndpointCircuitBadge({ circuit, archived = false }: EndpointCircuitBadgeProps) {
-  if (!circuit || archived || circuit.state === "enabled") return null;
+function EndpointCircuitBadge({ circuit, archived = false, showEnabled = false }: EndpointCircuitBadgeProps) {
+  if (!circuit || archived || (circuit.state === "enabled" && !showEnabled)) return null;
+
+  if (circuit.state === "enabled") {
+    return (
+      <Badge tone="green" dot>
+        Enabled
+      </Badge>
+    );
+  }
 
   if (circuit.state === "circuit_open") {
     return (

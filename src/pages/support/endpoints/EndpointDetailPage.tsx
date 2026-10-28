@@ -5,6 +5,7 @@ import EndpointCircuitBadge from "../../../components/endpoints/EndpointCircuitB
 import EndpointFormModal, { type EndpointFormValues } from "../../../components/endpoints/EndpointFormModal";
 import DeliveryActivityPanel from "../../../components/endpoints/DeliveryActivityPanel";
 import EndpointStatusBadge from "../../../components/endpoints/EndpointStatusBadge";
+import ReceiverChecksSection from "../../../components/endpoints/ReceiverChecksSection";
 import EventSubscriptions from "../../../components/endpoints/EventSubscriptions";
 import EventSubscriptionsModal from "../../../components/endpoints/EventSubscriptionsModal";
 import SigningSecretDialog from "../../../components/endpoints/SigningSecretDialog";
@@ -166,6 +167,10 @@ function EndpointDetailPage() {
 
     if (!result.ok) {
       setActionError(result.error);
+
+      const refreshed = await getEndpoint(projectId, endpointId);
+      if (refreshed.ok) setEndpoint(refreshed.data);
+
       return;
     }
 
@@ -316,7 +321,7 @@ function EndpointDetailPage() {
                 </div>
               </div>
 
-              {isOwner && (
+              {isOwner && deliveryDisabled && (
                 <Button
                   variant="primary"
                   size="md"
@@ -332,11 +337,14 @@ function EndpointDetailPage() {
             <dl className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
               <div>
                 <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
-                  Failure progress
+                  Failures
                 </dt>
                 <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">
-                  {formatCount(circuit.failure_count)} of {formatCount(circuit.failure_threshold)} consecutive failures
+                  {formatCount(circuit.failure_count)} consecutive failures
                 </dd>
+                <p className="mt-1 text-xs font-medium text-[#53665A]">
+                  Circuit opened after {formatCount(circuit.failure_threshold)} failures.
+                </p>
               </div>
 
               <div>
@@ -347,28 +355,6 @@ function EndpointDetailPage() {
                   {circuit.opened_at ? formatDateTime(circuit.opened_at) : "—"}
                 </dd>
               </div>
-
-              {circuitOpen && (
-                <div>
-                  <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
-                    Next receiver check
-                  </dt>
-                  <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">
-                    {circuit.next_probe_at ? formatDateTime(circuit.next_probe_at) : "—"}
-                  </dd>
-                </div>
-              )}
-
-              {deliveryDisabled && (
-                <div>
-                  <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
-                    Protection window ended
-                  </dt>
-                  <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">
-                    {circuit.disable_window_ends_at ? formatDateTime(circuit.disable_window_ends_at) : "—"}
-                  </dd>
-                </div>
-              )}
 
               <div>
                 <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
@@ -417,6 +403,8 @@ function EndpointDetailPage() {
           </div>
         )}
 
+        {!archived && circuit && <ReceiverChecksSection circuit={circuit} />}
+
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
           <section className="rounded-[18px] border border-[#D8E3DB] bg-white p-6 shadow-[0_8px_30px_rgba(32,78,53,0.05)] lg:col-span-2">
             <h2 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Endpoint information</h2>
@@ -444,11 +432,7 @@ function EndpointDetailPage() {
                     Circuit protection
                   </dt>
                   <dd className="mt-1">
-                    {circuit.state === "enabled" ? (
-                      <span className="text-sm font-semibold text-[#1F2A24]">Normal</span>
-                    ) : (
-                      <EndpointCircuitBadge circuit={circuit} />
-                    )}
+                    <EndpointCircuitBadge circuit={circuit} showEnabled />
                   </dd>
                 </div>
               )}

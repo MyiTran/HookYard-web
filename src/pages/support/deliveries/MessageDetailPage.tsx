@@ -10,7 +10,7 @@ import PayloadBlock from "../../../components/deliveries/PayloadBlock";
 import AppLayout from "../../../components/layout/AppLayout";
 import CopyButton from "../../../components/ui/CopyButton";
 import { formatDateTime } from "../../../lib/dateFormat";
-import { formatAttemptsUsed, heldDeliveryLabel } from "../../../lib/deliveryStatus";
+import { formatAttemptsUsed, heldDeliveryGuidance, heldDeliveryLabel } from "../../../lib/deliveryStatus";
 import { getDeliveryMessage } from "../../../lib/deliveryApi";
 import { getEndpoint } from "../../../lib/endpointApi";
 import { formatDuration } from "../../../lib/durationFormat";
@@ -248,6 +248,9 @@ function MessageDetailPage() {
                     <dd className="mt-1 text-xs font-semibold text-[#1F2A24]">
                       {formatDateTime(message.hold.release_at ?? endpointCircuit?.next_probe_at ?? "")}
                     </dd>
+                    <p className="mt-1 text-xs font-medium text-[#8A9990]">
+                      The next check is a receiver health check, not another attempt for this delivery.
+                    </p>
                   </div>
                 )}
               </dl>
@@ -255,7 +258,7 @@ function MessageDetailPage() {
               <p className="mt-3 text-xs font-medium text-[#6B5A35]">
                 {endpointCircuit?.state === "disabled"
                   ? "Automatic delivery is disabled. A project owner must re-enable delivery before this message can be sent."
-                  : "HookYard has not sent this request yet because delivery is being protected. Held deliveries are released after the receiver recovers."}
+                  : heldDeliveryGuidance(message.attempt_count, message.max_attempts)}
               </p>
 
               <Link
@@ -364,7 +367,7 @@ function MessageDetailPage() {
               <p className="text-sm font-semibold text-[#1F2A24]">No delivery attempts yet</p>
               <p className="mx-auto mt-1 max-w-sm text-xs font-medium text-[#8A9990]">
                 {message.hold
-                  ? "HookYard has not sent this request yet because delivery is being protected. Attempts will appear after the receiver recovers."
+                  ? heldDeliveryGuidance(message.attempt_count, message.max_attempts)
                   : "Attempts will appear here once HookYard starts delivering this message."}
               </p>
             </div>

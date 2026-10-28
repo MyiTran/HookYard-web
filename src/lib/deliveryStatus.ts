@@ -43,6 +43,18 @@ export function heldDeliveryLabel(hold: DeliveryHold): string {
   return "Held — endpoint circuit open";
 }
 
+export function heldDeliveryGuidance(attemptCount: number, maxAttempts: number | null): string {
+  if (attemptCount === 0) {
+    return "HookYard has not sent this delivery because the endpoint is being protected. It will be released after the receiver recovers.";
+  }
+
+  if (typeof maxAttempts === "number") {
+    return `HookYard paused further delivery attempts after the endpoint circuit opened. This delivery has already used ${attemptCount} of ${maxAttempts} attempts.`;
+  }
+
+  return `HookYard paused further delivery attempts after the endpoint circuit opened. This delivery has already used ${attemptCount} ${attemptCount === 1 ? "attempt" : "attempts"}.`;
+}
+
 export function deliveryLifecycleLabel(message: DeliveryLifecycleState): string {
   if (isHeldDelivery(message) && message.hold) return heldDeliveryLabel(message.hold);
 
