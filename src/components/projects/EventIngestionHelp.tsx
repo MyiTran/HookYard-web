@@ -119,6 +119,10 @@ function EventIngestionHelp() {
             202 new event · 200 duplicate · 401 invalid or revoked key · 422 invalid body or reused key with
             different content
           </p>
+          <p className="text-[11px] font-medium leading-4 text-[#607267]">
+            429 delivery queue at capacity · the Event was not accepted and no delivery was queued. Wait for
+            the Retry-After value, then retry with the same idempotency_key.
+          </p>
         </div>
       </section>
     </div>

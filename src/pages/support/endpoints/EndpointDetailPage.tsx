@@ -1,15 +1,18 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate, useOutletContext, useParams } from "react-router-dom";
+import EndpointCircuitBadge from "../../../components/endpoints/EndpointCircuitBadge";
 import EndpointFormModal, { type EndpointFormValues } from "../../../components/endpoints/EndpointFormModal";
 import DeliveryActivityPanel from "../../../components/endpoints/DeliveryActivityPanel";
 import EndpointStatusBadge from "../../../components/endpoints/EndpointStatusBadge";
+import ReceiverChecksSection from "../../../components/endpoints/ReceiverChecksSection";
 import EventSubscriptions from "../../../components/endpoints/EventSubscriptions";
 import EventSubscriptionsModal from "../../../components/endpoints/EventSubscriptionsModal";
 import SigningSecretDialog from "../../../components/endpoints/SigningSecretDialog";
 import SigningSecretHelp from "../../../components/endpoints/SigningSecretHelp";
 import AppLayout from "../../../components/layout/AppLayout";
 import ShieldIcon from "../../../components/icons/ShieldIcon";
+import AlertTriangleIcon from "../../../components/icons/AlertTriangleIcon";
 import RefreshIcon from "../../../components/icons/RefreshIcon";
 import Button from "../../../components/ui/Button";
 import ConfirmDialog from "../../../components/ui/ConfirmDialog";
@@ -17,8 +20,9 @@ import ContextualHelp from "../../../components/ui/ContextualHelp";
 import { useToast } from "../../../components/ui/toastContext";
 import type { ApiResult } from "../../../lib/apiRequest";
 import { formatDateTime } from "../../../lib/dateFormat";
-import { archiveEndpoint, getEndpoint, rotateSigningSecret, updateEndpoint } from "../../../lib/endpointApi";
+import { archiveEndpoint, getEndpoint, reEnableEndpointDelivery, rotateSigningSecret, updateEndpoint } from "../../../lib/endpointApi";
 import { readNavState } from "../../../lib/navState";
+import { formatCount } from "../../../lib/numberFormat";
 import { getProject } from "../../../lib/projectApi";
 import type { Endpoint } from "../../../types/endpoint";
 import type { Project } from "../../../types/project";
@@ -51,6 +55,8 @@ function EndpointDetailPage() {
   const [showRotate, setShowRotate] = useState(false);
   const [showSubscriptions, setShowSubscriptions] = useState(false);
   const [togglingActive, setTogglingActive] = useState(false);
+  const [showReEnable, setShowReEnable] = useState(false);
+  const [reEnabling, setReEnabling] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -150,6 +156,28 @@ function EndpointDetailPage() {
     return result;
   }
 
+  async function handleReEnable() {
+    setActionError("");
+    setReEnabling(true);
+
+    const result = await reEnableEndpointDelivery(projectId, endpointId);
+
+    setReEnabling(false);
+    setShowReEnable(false);
+
+    if (!result.ok) {
+      setActionError(result.error);
+
+      const refreshed = await getEndpoint(projectId, endpointId);
+      if (refreshed.ok) setEndpoint(refreshed.data);
+
+      return;
+    }
+
+    setEndpoint(result.data);
+    showToast({ type: "success", message: "Delivery re-enabled successfully" });
+  }
+
   async function handleArchive() {
     setActionError("");
     setArchiving(true);
@@ -216,6 +244,11 @@ function EndpointDetailPage() {
     const archived = Boolean(endpoint.archived_at);
     const isOwner = project?.current_user_role === "owner";
     const lastRotated = endpoint.signing_secret_last_rotated_at;
+    const circuit = endpoint.circuit;
+    const queue = endpoint.queue;
+    const circuitOpen = circuit?.state === "circuit_open";
+    const deliveryDisabled = circuit?.state === "disabled";
+    const circuitProtected = !archived && Boolean(circuitOpen || deliveryDisabled);
 
     body = (
       <>
@@ -224,6 +257,7 @@ function EndpointDetailPage() {
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="truncate text-3xl font-semibold tracking-tight">{endpoint.name}</h1>
               <EndpointStatusBadge active={endpoint.active} archived={archived} />
+              <EndpointCircuitBadge circuit={circuit} archived={archived} />
             </div>
 
             <p className="mt-2 truncate text-sm font-medium text-[#53665A]">{endpoint.url}</p>
@@ -258,6 +292,119 @@ function EndpointDetailPage() {
           <p className="mt-6 rounded-xl bg-[#FBEEEE] px-4 py-3 text-sm text-[#B42318]">{actionError}</p>
         )}
 
+        {circuitProtected && circuit && (
+          <section
+            className={`mt-6 rounded-[18px] border p-5 shadow-[0_8px_30px_rgba(32,78,53,0.05)] ${
+              circuitOpen ? "border-[#E8D5B5] bg-[#FBF7EC]" : "border-[#F1D5D5] bg-[#FBEEEE]"
+            }`}
+          >
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex min-w-0 gap-3">
+                <span
+                  aria-hidden="true"
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                    circuitOpen ? "bg-[#F3E3C4] text-[#8A5D14]" : "bg-[#F7D9D9] text-[#B42318]"
+                  }`}
+                >
+                  {circuitOpen ? <ShieldIcon className="h-4 w-4" /> : <AlertTriangleIcon className="h-4 w-4" />}
+                </span>
+
+                <div className="min-w-0">
+                  <h2 className="text-sm font-semibold tracking-tight text-[#1F2A24]">
+                    {circuitOpen ? "Delivery temporarily paused" : "Delivery requires attention"}
+                  </h2>
+                  <p className="mt-1 max-w-2xl text-sm font-medium text-[#53665A]">
+                    {circuitOpen
+                      ? "The receiver has repeatedly failed, so HookYard is protecting delivery traffic."
+                      : "Receiver checks kept failing during the protection window, so automatic delivery is disabled."}
+                  </p>
+                </div>
+              </div>
+
+              {isOwner && deliveryDisabled && (
+                <Button
+                  variant="primary"
+                  size="md"
+                  className="shrink-0"
+                  disabled={reEnabling}
+                  onClick={() => setShowReEnable(true)}
+                >
+                  Re-enable delivery
+                </Button>
+              )}
+            </div>
+
+            <dl className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
+                  Failures
+                </dt>
+                <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">
+                  {formatCount(circuit.failure_count)} consecutive failures
+                </dd>
+                <p className="mt-1 text-xs font-medium text-[#53665A]">
+                  Circuit opened after {formatCount(circuit.failure_threshold)} failures.
+                </p>
+              </div>
+
+              <div>
+                <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
+                  Circuit opened
+                </dt>
+                <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">
+                  {circuit.opened_at ? formatDateTime(circuit.opened_at) : "—"}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
+                  Held deliveries
+                </dt>
+                <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">
+                  {formatCount(circuit.held_message_count)}
+                </dd>
+              </div>
+
+              {queue && (
+                <div>
+                  <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
+                    Delivery queue
+                  </dt>
+                  <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">
+                    {formatCount(queue.queued_count)} / {formatCount(queue.capacity)} queued
+                  </dd>
+                </div>
+              )}
+            </dl>
+
+            {circuitOpen && circuit.probe_in_flight && (
+              <p className="mt-3 text-xs font-medium text-[#8A5D14]">Checking receiver…</p>
+            )}
+
+            {deliveryDisabled && (
+              <p className="mt-3 text-xs font-medium text-[#B42318]">
+                Only a project owner can re-enable delivery.
+              </p>
+            )}
+          </section>
+        )}
+
+        {queue && queue.state !== "ok" && (
+          <div
+            className={`mt-4 rounded-xl border px-4 py-3 text-sm font-medium ${
+              queue.state === "full"
+                ? "border-[#F1D5D5] bg-[#FBEEEE] text-[#B42318]"
+                : "border-[#E8D5B5] bg-[#FBF7EC] text-[#8A5D14]"
+            }`}
+          >
+            {queue.state === "full"
+              ? `Delivery queue is full (${formatCount(queue.queued_count)} of ${formatCount(queue.capacity)}). New events may be rejected until capacity is available.`
+              : `Delivery queue is filling up (${formatCount(queue.queued_count)} of ${formatCount(queue.capacity)}). Monitor delivery health before sending high volumes.`}
+          </div>
+        )}
+
+        {!archived && circuit && <ReceiverChecksSection circuit={circuit} />}
+
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
           <section className="rounded-[18px] border border-[#D8E3DB] bg-white p-6 shadow-[0_8px_30px_rgba(32,78,53,0.05)] lg:col-span-2">
             <h2 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Endpoint information</h2>
@@ -278,6 +425,28 @@ function EndpointDetailPage() {
                   <EndpointStatusBadge active={endpoint.active} archived={archived} />
                 </dd>
               </div>
+
+              {circuit && !archived && (
+                <div>
+                  <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
+                    Circuit protection
+                  </dt>
+                  <dd className="mt-1">
+                    <EndpointCircuitBadge circuit={circuit} showEnabled />
+                  </dd>
+                </div>
+              )}
+
+              {circuit?.state === "enabled" && queue && !archived && (
+                <div>
+                  <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
+                    Delivery queue
+                  </dt>
+                  <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">
+                    {formatCount(queue.queued_count)} / {formatCount(queue.capacity)} queued
+                  </dd>
+                </div>
+              )}
 
               <div>
                 <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Created</dt>
@@ -378,6 +547,8 @@ function EndpointDetailPage() {
           endpointId={endpointId}
           endpointName={endpoint.name}
           origin={navState}
+          heldMessageCount={circuit?.held_message_count ?? 0}
+          circuitState={circuit?.state}
         />
 
         {showEdit && project && (
@@ -421,6 +592,19 @@ function EndpointDetailPage() {
             loading={rotating}
             onConfirm={handleRotate}
             onCancel={() => setShowRotate(false)}
+          />
+        )}
+
+        {showReEnable && (
+          <ConfirmDialog
+            title="Re-enable delivery?"
+            description="Re-enabling resumes automatic delivery checks for this endpoint. It does not replay deliveries that already failed permanently. Your manual pause or resume setting is not changed."
+            note="Held deliveries may be released gradually to protect the receiver."
+            confirmLabel="Re-enable delivery"
+            pendingLabel="Re-enabling..."
+            loading={reEnabling}
+            onConfirm={handleReEnable}
+            onCancel={() => setShowReEnable(false)}
           />
         )}
 

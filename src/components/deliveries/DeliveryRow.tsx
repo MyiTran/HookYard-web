@@ -5,6 +5,7 @@ import { formatDuration } from "../../lib/durationFormat";
 import type { NavState } from "../../lib/navState";
 import type { DeliveryMessageSummary } from "../../types/delivery";
 import ChevronRightIcon from "../icons/ChevronRightIcon";
+import DeliveryHoldBadge from "./DeliveryHoldBadge";
 import DeliveryLifecycleText from "./DeliveryLifecycleText";
 import DeliveryStatusBadge from "./DeliveryStatusBadge";
 import HttpStatusBadge from "./HttpStatusBadge";
@@ -35,7 +36,11 @@ function DeliveryRow({ message, projectId, endpointId, endpointName, origin, pag
     >
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-          <DeliveryStatusBadge status={message.status} />
+          {message.hold ? (
+            <DeliveryHoldBadge hold={message.hold} />
+          ) : (
+            <DeliveryStatusBadge status={message.status} />
+          )}
           <span className="min-w-0 truncate text-sm font-semibold tracking-tight text-[#1F2A24]" title={message.event_type}>
             {message.event_type}
           </span>

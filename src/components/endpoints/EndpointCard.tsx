@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import ChevronRightIcon from "../icons/ChevronRightIcon";
 import { formatDateTime } from "../../lib/dateFormat";
 import type { Endpoint } from "../../types/endpoint";
+import EndpointCircuitBadge from "./EndpointCircuitBadge";
 import EndpointStatusBadge from "./EndpointStatusBadge";
 
 type EndpointCardProps = {
@@ -9,7 +10,7 @@ type EndpointCardProps = {
 };
 
 export const ENDPOINT_ROW_GRID_COLS =
-  "grid-cols-2 lg:grid-cols-[minmax(0,2.3fr)_minmax(0,1.2fr)_0.9fr_1fr_2rem]";
+  "grid-cols-2 lg:grid-cols-[minmax(0,2.3fr)_minmax(0,1.1fr)_minmax(0,1.4fr)_1fr_2rem]";
 
 function EndpointCard({ endpoint }: EndpointCardProps) {
   return (
@@ -27,9 +28,10 @@ function EndpointCard({ endpoint }: EndpointCardProps) {
         {endpoint.project.name}
       </div>
 
-      <div>
+      <div className="flex flex-wrap items-center gap-2">
         <span className="mr-1 text-xs font-medium text-[#8A9990] lg:hidden">Status </span>
         <EndpointStatusBadge active={endpoint.active} archived={Boolean(endpoint.archived_at)} />
+        <EndpointCircuitBadge circuit={endpoint.circuit} archived={Boolean(endpoint.archived_at)} />
       </div>
 
       <div className="whitespace-nowrap text-xs font-medium text-[#8A9990]">
