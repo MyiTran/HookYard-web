@@ -1,5 +1,5 @@
-import type { Project, ProjectInvitation, ProjectMembership, ProjectMembershipRole } from "../types/project";
 import type { Paginated } from "../types/pagination";
+import type { Project, ProjectInvitation, ProjectMembership, ProjectMembershipRole } from "../types/project";
 import { apiRequest, apiRequestCollection, apiRequestPage, type ApiResult } from "./apiRequest";
 
 export type ProjectQueryParams = {

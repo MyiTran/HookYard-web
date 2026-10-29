@@ -17,6 +17,8 @@ import EndpointDetailPage from "./pages/support/endpoints/EndpointDetailPage";
 import EndpointsPage from "./pages/support/endpoints/EndpointsPage";
 import ProjectDetailPage from "./pages/support/projects/ProjectDetailPage";
 import ProjectsPage from "./pages/support/projects/ProjectsPage";
+import PlanPage from "./pages/support/settings/PlanPage";
+import SettingsPage from "./pages/support/settings/SettingsPage";
 import type { CurrentUser, UserProfile } from "./types/user";
 
 const isAuthenticated = () => Boolean(localStorage.getItem("token"));
@@ -128,6 +130,8 @@ function App() {
           path="/projects/:projectId/endpoints/:endpointId/deliveries/:messageId"
           element={<MessageDetailPage />}
         />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/settings/plan" element={<PlanPage />} />
         <Route path="/admin" element={<AdminRoute />} />
       </Route>
 

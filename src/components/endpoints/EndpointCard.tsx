@@ -3,6 +3,7 @@ import ChevronRightIcon from "../icons/ChevronRightIcon";
 import { formatDateTime } from "../../lib/dateFormat";
 import type { Endpoint } from "../../types/endpoint";
 import EndpointCircuitBadge from "./EndpointCircuitBadge";
+import EndpointPlanLockBadge from "./EndpointPlanLockBadge";
 import EndpointStatusBadge from "./EndpointStatusBadge";
 
 type EndpointCardProps = {
@@ -32,6 +33,7 @@ function EndpointCard({ endpoint }: EndpointCardProps) {
         <span className="mr-1 text-xs font-medium text-[#8A9990] lg:hidden">Status </span>
         <EndpointStatusBadge active={endpoint.active} archived={Boolean(endpoint.archived_at)} />
         <EndpointCircuitBadge circuit={endpoint.circuit} archived={Boolean(endpoint.archived_at)} />
+        <EndpointPlanLockBadge planLocked={endpoint.plan_locked} />
       </div>
 
       <div className="whitespace-nowrap text-xs font-medium text-[#8A9990]">

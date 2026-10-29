@@ -1,4 +1,4 @@
-import Button from "./Button";
+import Button, { type ButtonVariant } from "./Button";
 import Modal from "./Modal";
 
 type ConfirmDialogProps = {
@@ -7,6 +7,7 @@ type ConfirmDialogProps = {
   confirmLabel: string;
   pendingLabel: string;
   note?: string;
+  confirmVariant?: ButtonVariant;
   onConfirm: () => void;
   onCancel: () => void;
   loading?: boolean;
@@ -18,6 +19,7 @@ function ConfirmDialog({
   confirmLabel,
   pendingLabel,
   note,
+  confirmVariant = "danger",
   onConfirm,
   onCancel,
   loading = false,
@@ -33,7 +35,7 @@ function ConfirmDialog({
           Cancel
         </Button>
 
-        <Button variant="danger" size="lg" onClick={onConfirm} loading={loading}>
+        <Button variant={confirmVariant} size="lg" onClick={onConfirm} loading={loading}>
           {loading ? pendingLabel : confirmLabel}
         </Button>
       </div>

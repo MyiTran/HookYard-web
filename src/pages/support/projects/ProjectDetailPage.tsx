@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate, useOutletContext, useParams } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
 import ProjectEndpointsPanel from "../../../components/endpoints/ProjectEndpointsPanel";
+import PlanBadge from "../../../components/plan/PlanBadge";
 import ProjectApiKeysPanel from "../../../components/projects/ProjectApiKeysPanel";
 import ProjectMetrics from "../../../components/projects/ProjectMetrics";
 import CollaboratorsList from "../../../components/projects/CollaboratorsList";
@@ -15,6 +16,7 @@ import { useToast } from "../../../components/ui/toastContext";
 import { useNotifications } from "../../../hooks/notificationsContext";
 import { formatUserName } from "../../../lib/currentUser";
 import { formatDateTime } from "../../../lib/dateFormat";
+import { formatCount } from "../../../lib/numberFormat";
 import {
   cancelInvitation,
   createInvitation,
@@ -306,6 +308,18 @@ function ProjectDetailPage() {
             <div>
               <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">Your role</dt>
               <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">{isOwner ? "Owner" : "Maintainer"}</dd>
+            </div>
+
+            <div>
+              <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
+                Project billing plan
+              </dt>
+              <dd className="mt-1 flex flex-wrap items-center gap-2">
+                <PlanBadge plan={project.plan} />
+                <span className="text-xs font-medium text-[#8A9990]">
+                  {formatCount(project.endpoint_limit)} endpoints per project
+                </span>
+              </dd>
             </div>
           </dl>
         </section>
