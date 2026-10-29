@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { formatDateTime } from "../../lib/dateFormat";
+import { attemptFailureHeadline } from "../../lib/deliveryStatus";
 import { formatDuration } from "../../lib/durationFormat";
 import type { DeliveryAttempt } from "../../types/delivery";
 import ChevronDownIcon from "../icons/ChevronDownIcon";
@@ -66,7 +67,7 @@ function AttemptCard({ attempt }: AttemptCardProps) {
 
       {!hasResponse && (
         <div className="mt-4 rounded-xl bg-[#FBF1E4] px-4 py-3">
-          <p className="text-sm font-semibold text-[#9A6B1F]">No HTTP response was received</p>
+          <p className="text-sm font-semibold text-[#9A6B1F]">{attemptFailureHeadline(attempt.error_type)}</p>
 
           {(attempt.error_type || attempt.error_message) && (
             <p className="mt-1 break-words text-xs font-medium text-[#9A6B1F]">

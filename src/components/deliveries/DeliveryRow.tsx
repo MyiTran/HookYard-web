@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 import { formatDateTime } from "../../lib/dateFormat";
+import { formatAttemptProgress } from "../../lib/deliveryStatus";
 import { formatDuration } from "../../lib/durationFormat";
 import type { NavState } from "../../lib/navState";
 import type { DeliveryMessageSummary } from "../../types/delivery";
 import ChevronRightIcon from "../icons/ChevronRightIcon";
+import DeliveryLifecycleText from "./DeliveryLifecycleText";
 import DeliveryStatusBadge from "./DeliveryStatusBadge";
 import HttpStatusBadge from "./HttpStatusBadge";
 
@@ -19,8 +21,6 @@ type DeliveryRowProps = {
 function DeliveryRow({ message, projectId, endpointId, endpointName, origin, page }: DeliveryRowProps) {
   const endpointPath = `/projects/${projectId}/endpoints/${endpointId}`;
   const backTo = page > 1 ? `${endpointPath}?deliveries_page=${page}` : endpointPath;
-
-  const attemptLabel = `${message.attempt_count} ${message.attempt_count === 1 ? "attempt" : "attempts"}`;
 
   return (
     <Link
@@ -57,26 +57,32 @@ function DeliveryRow({ message, projectId, endpointId, endpointName, origin, pag
             {formatDateTime(message.created_at)}
           </span>
 
+          <DeliveryLifecycleText message={message} />
+
           <span>
             <span className="text-[#8A9990]">Latest attempt </span>
             {message.last_attempt_at ? formatDateTime(message.last_attempt_at) : "—"}
           </span>
 
-          <span className="inline-flex items-center gap-1.5">
-            <span className="text-[#8A9990]">Result </span>
-            {message.attempt_count === 0 ? (
-              <span className="text-[#8A9990]">No attempts yet</span>
-            ) : message.status === "delivering" && message.last_response_status === null && !message.last_error_type ? (
-              <span className="font-semibold text-[#2563A8]">In progress</span>
-            ) : (
-              <HttpStatusBadge status={message.last_response_status} errorType={message.last_error_type} />
-            )}
-          </span>
+          {message.attempt_count > 0 && (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="text-[#8A9990]">Result </span>
+              {message.status === "delivering" &&
+              message.last_response_status === null &&
+              !message.last_error_type ? (
+                <span className="font-semibold text-[#2563A8]">In progress</span>
+              ) : (
+                <HttpStatusBadge status={message.last_response_status} errorType={message.last_error_type} />
+              )}
+            </span>
+          )}
 
-          <span>
-            <span className="text-[#8A9990]">Attempts </span>
-            {attemptLabel}
-          </span>
+          {message.attempt_count > 0 && message.status !== "failed" && (
+            <span>
+              <span className="text-[#8A9990]">Attempts </span>
+              {formatAttemptProgress(message.attempt_count, message.max_attempts)}
+            </span>
+          )}
 
           {message.last_duration_ms !== null && (
             <span className="text-[#8A9990]">{formatDuration(message.last_duration_ms)}</span>
