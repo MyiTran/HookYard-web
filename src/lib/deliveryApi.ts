@@ -8,6 +8,7 @@ import type {
 } from "../types/delivery";
 import type { Paginated } from "../types/pagination";
 import { apiRequest, apiRequestPage, type ApiResult } from "./apiRequest";
+import { toUtcRangeBound } from "./dateRange";
 
 export const DELIVERIES_PAGE_SIZE = 25;
 export const DELIVERIES_PAGE_SIZES = [25, 50, 100];
@@ -35,11 +36,27 @@ function buildPageParams(page?: number, perPage?: number): URLSearchParams {
   return query;
 }
 
-function toRangeBound(value: string, edge: "start" | "end"): string {
-  const time = edge === "start" ? "T00:00:00.000" : "T23:59:59.999";
-  const date = new Date(`${value}${time}`);
+export type DeliverySearchKind = "message" | "request" | "text";
 
-  return Number.isNaN(date.getTime()) ? value : date.toISOString();
+export function readDeliverySearchKind(value: string): DeliverySearchKind {
+  const normalized = value.trim();
+
+  if (normalized.startsWith("msg_")) return "message";
+  if (normalized.startsWith("req_")) return "request";
+
+  return "text";
+}
+
+function applySearch(query: URLSearchParams, value: string): void {
+  const normalized = value.trim();
+
+  if (!normalized) return;
+
+  const kind = readDeliverySearchKind(normalized);
+
+  if (kind === "message") query.set("message_id", normalized);
+  else if (kind === "request") query.set("request_id", normalized);
+  else query.set("q", normalized);
 }
 
 export function getDeliveries(
@@ -47,14 +64,14 @@ export function getDeliveries(
 ): Promise<ApiResult<Paginated<GlobalDeliveryMessageSummary>>> {
   const query = buildPageParams(params.page, params.perPage);
 
-  if (params.q) query.set("q", params.q);
+  applySearch(query, params.q ?? "");
   if (params.projectId) query.set("project_id", params.projectId);
   if (params.endpointId) query.set("endpoint_id", params.endpointId);
   if (params.status) query.set("status", params.status);
   if (params.deliveryState) query.set("delivery_state", params.deliveryState);
   if (params.eventType) query.set("event_type", params.eventType);
-  if (params.from) query.set("from", toRangeBound(params.from, "start"));
-  if (params.to) query.set("to", toRangeBound(params.to, "end"));
+  if (params.from) query.set("from", toUtcRangeBound(params.from, "start"));
+  if (params.to) query.set("to", toUtcRangeBound(params.to, "end"));
   if (params.order) query.set("order", params.order);
 
   const suffix = query.toString();

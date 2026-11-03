@@ -77,7 +77,11 @@ function DeliveryRow({ message, projectId, endpointId, endpointName, origin, pag
               !message.last_error_type ? (
                 <span className="font-semibold text-[#2563A8]">In progress</span>
               ) : (
-                <HttpStatusBadge status={message.last_response_status} errorType={message.last_error_type} />
+                <HttpStatusBadge
+                  status={message.last_response_status}
+                  errorType={message.last_error_type}
+                  failureCategory={message.failure_category}
+                />
               )}
             </span>
           )}

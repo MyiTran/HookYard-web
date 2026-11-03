@@ -7,6 +7,7 @@ export type AvailablePlan = {
   project_limit: number;
   endpoint_limit_per_project: number;
   monthly_delivery_limit: number;
+  body_retention_days: number;
 };
 
 export type AccountUsage = {
@@ -23,6 +24,7 @@ export type AccountPlan = {
   project_limit: number;
   endpoint_limit_per_project: number;
   monthly_delivery_limit: number;
+  body_retention_days: number;
   available_plans: AvailablePlan[] | null;
   usage: AccountUsage | null;
 };

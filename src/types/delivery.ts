@@ -36,6 +36,7 @@ export type DeliveryMessageSummary = {
   last_response_status: number | null;
   last_duration_ms: number | null;
   last_error_type: string | null;
+  failure_category?: string | null;
 };
 
 export type DeliveryProjectRef = {
@@ -109,6 +110,8 @@ export type DeliveryAttempt = {
   error_type: string | null;
   error_message: string | null;
   status: AttemptStatus;
+  bodies_purged_at: string | null;
+  failure_category?: string | null;
 };
 
 export type DeliveryMessageDetail = {
@@ -124,6 +127,7 @@ export type DeliveryMessageDetail = {
   retryable: boolean;
   delivery_state?: DeliveryState;
   hold?: DeliveryHold | null;
+  failure_category?: string | null;
   event: DeliveryEvent;
   endpoint: DeliveryEndpointRef;
   attempts: DeliveryAttempt[];

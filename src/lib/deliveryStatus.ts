@@ -79,15 +79,46 @@ export function deliveryLifecycleLabel(message: DeliveryLifecycleState): string 
   return `Failed after ${attemptsUsed} ${attemptsLabel}`;
 }
 
-export function attemptFailureShortLabel(errorType?: string | null): string {
-  if (!errorType) return "No HTTP response";
+const FAILURE_CATEGORY_LABELS: Record<string, string> = {
+  destination_rejected: "Destination rejected",
+  timeout: "Timeout",
+  network: "Network error",
+  http_error: "HTTP error",
+  interrupted: "Attempt interrupted",
+};
+
+export function failureCategoryLabel(failureCategory?: string | null): string | null {
+  if (!failureCategory) return null;
+
+  return FAILURE_CATEGORY_LABELS[failureCategory] ?? null;
+}
+
+export function attemptFailureShortLabel(
+  failureCategory?: string | null,
+  errorType?: string | null,
+): string {
+  const categoryLabel = failureCategoryLabel(failureCategory);
+
+  if (categoryLabel === "Timeout") return "Timeout";
+  if (categoryLabel === "Attempt interrupted") return "Attempt interrupted";
+
+  if (!errorType) return categoryLabel ?? "No HTTP response";
   if (errorType === LEASE_EXPIRED_ERROR_TYPE) return "Lease expired";
   if (isTimeoutError(errorType)) return "Timeout";
 
-  return "Transport error";
+  return categoryLabel ?? "Transport error";
 }
 
-export function attemptFailureHeadline(errorType?: string | null): string {
+export function attemptFailureHeadline(
+  failureCategory?: string | null,
+  errorType?: string | null,
+): string {
+  if (failureCategory === "destination_rejected") return "Destination rejected — no request was sent";
+  if (failureCategory === "interrupted") return "Attempt interrupted — no response captured";
+  if (failureCategory === "timeout") return "Timeout — no HTTP response received";
+  if (failureCategory === "network") return "Network error — no HTTP response received";
+  if (failureCategory === "http_error") return "HTTP error";
+
   if (!errorType) return "No HTTP response was received";
   if (errorType === LEASE_EXPIRED_ERROR_TYPE) return "Delivery lease expired — no response captured";
   if (isTimeoutError(errorType)) return "Timeout — no HTTP response received";

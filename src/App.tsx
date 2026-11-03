@@ -12,6 +12,7 @@ import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import SignupPage from "./pages/auth/SignupPage";
 import SupportDashboardPage from "./pages/support/dashboard/DashboardPage";
 import DeliveriesPage from "./pages/support/deliveries/DeliveriesPage";
+import IngestRejectionsPage from "./pages/support/deliveries/IngestRejectionsPage";
 import MessageDetailPage from "./pages/support/deliveries/MessageDetailPage";
 import EndpointDetailPage from "./pages/support/endpoints/EndpointDetailPage";
 import EndpointsPage from "./pages/support/endpoints/EndpointsPage";
@@ -125,6 +126,7 @@ function App() {
         <Route path="/projects/:id" element={<ProjectDetailPage />} />
         <Route path="/endpoints" element={<EndpointsPage />} />
         <Route path="/deliveries" element={<DeliveriesPage />} />
+        <Route path="/deliveries/rejections" element={<IngestRejectionsPage />} />
         <Route path="/projects/:projectId/endpoints/:endpointId" element={<EndpointDetailPage />} />
         <Route
           path="/projects/:projectId/endpoints/:endpointId/deliveries/:messageId"
