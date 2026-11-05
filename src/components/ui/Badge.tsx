@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 
 type BadgeTone = "green" | "purple" | "amber" | "red" | "blue" | "neutral";
 
+export type { BadgeTone };
+
 type BadgeProps = {
   tone: BadgeTone;
   dot?: boolean;
