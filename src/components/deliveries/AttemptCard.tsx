@@ -20,6 +20,17 @@ type MetaItemProps = {
   className?: string;
 };
 
+type EvidenceNoteProps = {
+  tone?: "muted" | "warning";
+  children: ReactNode;
+  className?: string;
+};
+
+const NOTE_CLASSES = {
+  muted: "border-[#C9DACE] bg-[#F7FAF8] text-[#718078]",
+  warning: "border-[#E0D3BC] bg-[#FBF7EC] text-[#9A6B1F]",
+};
+
 function MetaItem({ label, children, className = "" }: MetaItemProps) {
   return (
     <div className={`min-w-0 ${className}`}>
@@ -29,10 +40,32 @@ function MetaItem({ label, children, className = "" }: MetaItemProps) {
   );
 }
 
+function EvidenceNote({ tone = "muted", children, className = "" }: EvidenceNoteProps) {
+  return (
+    <div className={`min-w-0 rounded-xl border border-dashed px-4 py-3 text-xs font-medium ${NOTE_CLASSES[tone]} ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+function RetentionNotice({ purgedAt }: { purgedAt: string }) {
+  return (
+    <div className="rounded-xl border border-[#E8D5B5] bg-[#FBF7EC] px-4 py-3 lg:col-span-2">
+      <p className="text-xs font-semibold text-[#8A5D14]">
+        Request and response bodies were removed by the retention policy on {formatDateTime(purgedAt)}.
+      </p>
+      <p className="mt-1 text-xs font-medium text-[#6B5A35]">
+        Delivery outcome and evidence metadata are still available. Only the stored bodies were removed.
+      </p>
+    </div>
+  );
+}
+
 function AttemptCard({ attempt }: AttemptCardProps) {
   const [showEvidence, setShowEvidence] = useState(false);
   const hasResponse = attempt.response_status !== null;
   const succeeded = attempt.status === "succeeded";
+  const bodiesPurgedAt = attempt.bodies_purged_at;
 
   return (
     <article className="rounded-[16px] border border-[#D8E3DB] bg-white p-5 shadow-[0_8px_30px_rgba(32,78,53,0.04)]">
@@ -62,16 +95,22 @@ function AttemptCard({ attempt }: AttemptCardProps) {
           </div>
         </div>
 
-        <HttpStatusBadge status={attempt.response_status} errorType={attempt.error_type} />
+        <HttpStatusBadge
+          status={attempt.response_status}
+          errorType={attempt.error_type}
+          failureCategory={attempt.failure_category}
+        />
       </div>
 
       {!hasResponse && (
         <div className="mt-4 rounded-xl bg-[#FBF1E4] px-4 py-3">
-          <p className="text-sm font-semibold text-[#9A6B1F]">{attemptFailureHeadline(attempt.error_type)}</p>
+          <p className="text-sm font-semibold text-[#9A6B1F]">
+            {attemptFailureHeadline(attempt.failure_category, attempt.error_type)}
+          </p>
 
-          {(attempt.error_type || attempt.error_message) && (
-            <p className="mt-1 break-words text-xs font-medium text-[#9A6B1F]">
-              {[attempt.error_type, attempt.error_message].filter(Boolean).join(" — ")}
+          {bodiesPurgedAt && (
+            <p className="mt-1 text-xs font-medium text-[#9A6B1F]">
+              Stored bodies for this attempt were removed by the retention policy.
             </p>
           )}
         </div>
@@ -109,18 +148,30 @@ function AttemptCard({ attempt }: AttemptCardProps) {
 
       {showEvidence && (
         <div className="mt-4 grid gap-4 border-t border-[#E4EBE6] pt-4 lg:grid-cols-2">
+          {bodiesPurgedAt && <RetentionNotice purgedAt={bodiesPurgedAt} />}
+
           <PayloadBlock label="Request headers" value={attempt.request_headers} isHeaders />
-          <PayloadBlock label="Request body" value={attempt.request_body} />
+
+          {bodiesPurgedAt ? (
+            <EvidenceNote>Request body was removed by the retention policy.</EvidenceNote>
+          ) : (
+            <PayloadBlock label="Request body" value={attempt.request_body} />
+          )}
 
           {hasResponse ? (
             <>
               <PayloadBlock label="Response headers" value={attempt.response_headers} isHeaders />
-              <PayloadBlock label="Response body" value={attempt.response_body} />
+
+              {bodiesPurgedAt ? (
+                <EvidenceNote>Response body was removed by the retention policy.</EvidenceNote>
+              ) : (
+                <PayloadBlock label="Response body" value={attempt.response_body} />
+              )}
             </>
           ) : (
-            <p className="rounded-xl border border-dashed border-[#E0D3BC] px-4 py-3 text-xs font-medium text-[#9A6B1F] lg:col-span-2">
-              No response headers or body were captured because no HTTP response was received.
-            </p>
+            <EvidenceNote tone="warning" className="lg:col-span-2">
+              No HTTP response was received.
+            </EvidenceNote>
           )}
         </div>
       )}

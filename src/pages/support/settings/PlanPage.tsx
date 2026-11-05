@@ -123,28 +123,36 @@ function PlanPage() {
           </p>
 
           {availablePlans && availablePlans.length > 0 ? (
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              {availablePlans.map((option) => (
-                <PlanOptionCard
-                  key={option.plan}
-                  plan={option.plan}
-                  projectLimit={option.project_limit}
-                  endpointLimit={option.endpoint_limit_per_project}
-                  deliveryLimit={option.monthly_delivery_limit}
-                  current={account.plan === option.plan}
-                  action={
-                    <PlanAction
-                      plan={option.plan}
-                      currentPlan={account.plan}
-                      onSelect={(nextPlan) => {
-                        setSwitchError("");
-                        setSwitchTarget(nextPlan);
-                      }}
-                    />
-                  }
-                />
-              ))}
-            </div>
+            <>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                {availablePlans.map((option) => (
+                  <PlanOptionCard
+                    key={option.plan}
+                    plan={option.plan}
+                    projectLimit={option.project_limit}
+                    endpointLimit={option.endpoint_limit_per_project}
+                    deliveryLimit={option.monthly_delivery_limit}
+                    bodyRetentionDays={option.body_retention_days}
+                    current={account.plan === option.plan}
+                    action={
+                      <PlanAction
+                        plan={option.plan}
+                        currentPlan={account.plan}
+                        onSelect={(nextPlan) => {
+                          setSwitchError("");
+                          setSwitchTarget(nextPlan);
+                        }}
+                      />
+                    }
+                  />
+                ))}
+              </div>
+
+              <p className="mt-3 max-w-3xl text-xs font-medium text-[#718078]">
+                Request and response bodies are removed after the retention period. Delivery status and attempt
+                metadata remain available.
+              </p>
+            </>
           ) : (
             <p
               role="status"

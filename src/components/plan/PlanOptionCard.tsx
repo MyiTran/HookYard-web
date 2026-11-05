@@ -19,6 +19,7 @@ type PlanOptionCardProps = {
   projectLimit: number;
   endpointLimit: number;
   deliveryLimit: number;
+  bodyRetentionDays: number;
   current: boolean;
   action?: ReactNode;
   sections?: PlanOptionSection[];
@@ -56,6 +57,7 @@ function PlanOptionCard({
   projectLimit,
   endpointLimit,
   deliveryLimit,
+  bodyRetentionDays,
   current,
   action,
   sections = [],
@@ -64,6 +66,7 @@ function PlanOptionCard({
     { label: "Projects", value: formatCount(projectLimit) },
     { label: "Endpoints per project", value: formatCount(endpointLimit) },
     { label: "Deliveries per month", value: formatCount(deliveryLimit) },
+    { label: "Attempt body retention", value: `${bodyRetentionDays} days` },
   ];
   const filledSections = sections.filter((section) => section.rows.length > 0);
 

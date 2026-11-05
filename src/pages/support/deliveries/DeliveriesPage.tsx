@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useOutletContext, useSearchParams } from "react-router-dom";
 import DeliveryFilterBar from "../../../components/deliveries/DeliveryFilterBar";
+import DeliveryLogTabs from "../../../components/deliveries/DeliveryLogTabs";
 import GlobalDeliveryRow, {
   GLOBAL_DELIVERY_ROW_GRID_COLS,
 } from "../../../components/deliveries/GlobalDeliveryRow";
@@ -9,8 +10,10 @@ import ActivityIcon from "../../../components/icons/ActivityIcon";
 import Button from "../../../components/ui/Button";
 import Pagination from "../../../components/ui/Pagination";
 import { DELIVERIES_PAGE_SIZE, DELIVERIES_PAGE_SIZES, getDeliveries } from "../../../lib/deliveryApi";
+import { readDateParam } from "../../../lib/dateRange";
 import { getEndpoints } from "../../../lib/endpointApi";
 import { getProjects } from "../../../lib/projectApi";
+import { readPageParam } from "../../../lib/searchParams";
 import type {
   DeliveryFilterKey,
   DeliveryFilters,
@@ -37,18 +40,6 @@ function readOrder(value: string | null): DeliveryOrder {
   return ORDER_VALUES.includes(value as DeliveryOrder) ? (value as DeliveryOrder) : DEFAULT_ORDER;
 }
 
-function readDate(value: string | null): string {
-  return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : "";
-}
-
-function readPage(value: string | null): number {
-  if (!value || !/^\d+$/.test(value)) return 1;
-
-  const parsed = Number(value);
-
-  return parsed > 1 ? parsed : 1;
-}
-
 function readPageSize(value: string | null): number {
   const parsed = Number(value);
 
@@ -71,8 +62,8 @@ function readFilters(params: URLSearchParams): DeliveryFilters {
     endpointId: params.get("endpoint_id") ?? "",
     status,
     eventType: params.get("event_type") ?? "",
-    from: readDate(params.get("from")),
-    to: readDate(params.get("to")),
+    from: readDateParam(params.get("from")),
+    to: readDateParam(params.get("to")),
     order: readOrder(params.get("order")),
   };
 }
@@ -99,7 +90,7 @@ function DeliveriesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const filters = readFilters(searchParams);
-  const page = readPage(searchParams.get("page"));
+  const page = readPageParam(searchParams.get("page"));
   const pageSize = readPageSize(searchParams.get("page_size"));
 
   const [deliveries, setDeliveries] = useState<GlobalDeliveryMessageSummary[]>([]);
@@ -352,7 +343,9 @@ function DeliveriesPage() {
         )}
       </div>
 
-      <div className="mt-8">
+      <DeliveryLogTabs />
+
+      <div className="mt-4">
         <DeliveryFilterBar
           filters={filters}
           projects={projects}

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { formatDateTime } from "../../lib/dateFormat";
-import { formatAttemptProgress, heldDeliveryLabel } from "../../lib/deliveryStatus";
+import { attemptFailureShortLabel, formatAttemptProgress, heldDeliveryLabel } from "../../lib/deliveryStatus";
 import { formatDuration } from "../../lib/durationFormat";
 import type { GlobalDeliveryMessageSummary } from "../../types/delivery";
 import ChevronRightIcon from "../icons/ChevronRightIcon";
@@ -26,6 +26,10 @@ function GlobalDeliveryRow({ message, backTo }: GlobalDeliveryRowProps) {
   const lastAttemptLabel = message.last_attempt_at
     ? `Last attempt ${formatDateTime(message.last_attempt_at)}`
     : "No attempts yet";
+  const transportLabel =
+    message.last_response_status === null && (message.last_error_type || message.failure_category)
+      ? attemptFailureShortLabel(message.failure_category, message.last_error_type)
+      : null;
 
   return (
     <Link
@@ -88,12 +92,16 @@ function GlobalDeliveryRow({ message, backTo }: GlobalDeliveryRowProps) {
         {message.attempt_count === 0 ? null : inProgress ? (
           <span className="text-xs font-semibold text-[#2563A8]">In progress</span>
         ) : (
-          <HttpStatusBadge status={message.last_response_status} errorType={message.last_error_type} />
+          <HttpStatusBadge
+            status={message.last_response_status}
+            errorType={message.last_error_type}
+            failureCategory={message.failure_category}
+          />
         )}
 
-        {message.last_error_type && (
-          <p className="mt-1 truncate text-[11px] font-medium text-[#9A6B1F]" title={message.last_error_type}>
-            {message.last_error_type}
+        {transportLabel && message.attempt_count > 0 && (
+          <p className="mt-1 truncate text-[11px] font-medium text-[#9A6B1F]" title={transportLabel}>
+            {transportLabel}
           </p>
         )}
       </div>

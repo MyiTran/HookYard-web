@@ -209,6 +209,7 @@ function MessageDetailPage() {
                     <HttpStatusBadge
                       status={latestAttempt.response_status}
                       errorType={latestAttempt.error_type}
+                      failureCategory={latestAttempt.failure_category}
                     />
                     {latestAttempt.duration_ms !== null && (
                       <span className="text-xs font-medium text-[#8A9990]">
