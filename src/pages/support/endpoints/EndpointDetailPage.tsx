@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate, useOutletContext, useParams } from "rea
 import EndpointCircuitBadge from "../../../components/endpoints/EndpointCircuitBadge";
 import EndpointFormModal, { type EndpointFormValues } from "../../../components/endpoints/EndpointFormModal";
 import DeliveryActivityPanel from "../../../components/endpoints/DeliveryActivityPanel";
+import EndpointPlanLockBadge, { PLAN_LOCK_HELP } from "../../../components/endpoints/EndpointPlanLockBadge";
 import EndpointStatusBadge from "../../../components/endpoints/EndpointStatusBadge";
 import ReceiverChecksSection from "../../../components/endpoints/ReceiverChecksSection";
 import EventSubscriptions from "../../../components/endpoints/EventSubscriptions";
@@ -258,6 +259,7 @@ function EndpointDetailPage() {
               <h1 className="truncate text-3xl font-semibold tracking-tight">{endpoint.name}</h1>
               <EndpointStatusBadge active={endpoint.active} archived={archived} />
               <EndpointCircuitBadge circuit={circuit} archived={archived} />
+              <EndpointPlanLockBadge planLocked={endpoint.plan_locked} />
             </div>
 
             <p className="mt-2 truncate text-sm font-medium text-[#53665A]">{endpoint.url}</p>
@@ -285,6 +287,12 @@ function EndpointDetailPage() {
         {archived && (
           <p className="mt-6 rounded-xl bg-[#FBF1E4] px-4 py-3 text-sm font-medium text-[#9A6B1F]">
             This endpoint is archived and read-only. It no longer receives webhook events.
+          </p>
+        )}
+
+        {endpoint.plan_locked && (
+          <p className="mt-6 rounded-xl border border-[#E8D5B5] bg-[#FBF7EC] px-4 py-3 text-sm font-medium text-[#8A5D14]">
+            {PLAN_LOCK_HELP}
           </p>
         )}
 
