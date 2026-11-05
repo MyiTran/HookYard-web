@@ -7,10 +7,11 @@ import DeliveryStatusBadge from "../../../components/deliveries/DeliveryStatusBa
 import EndpointCircuitBadge from "../../../components/endpoints/EndpointCircuitBadge";
 import HttpStatusBadge from "../../../components/deliveries/HttpStatusBadge";
 import PayloadBlock from "../../../components/deliveries/PayloadBlock";
+import MessageReplayPanel from "../../../components/replay/MessageReplayPanel";
 import AppLayout from "../../../components/layout/AppLayout";
 import CopyButton from "../../../components/ui/CopyButton";
 import { formatDateTime } from "../../../lib/dateFormat";
-import { formatAttemptsUsed, heldDeliveryGuidance, heldDeliveryLabel } from "../../../lib/deliveryStatus";
+import { formatAttemptsUsed, heldDeliveryGuidance, heldDeliveryLabel, isDeliveredByReplay } from "../../../lib/deliveryStatus";
 import { getDeliveryMessage } from "../../../lib/deliveryApi";
 import { getEndpoint } from "../../../lib/endpointApi";
 import { formatDuration } from "../../../lib/durationFormat";
@@ -30,6 +31,7 @@ function MessageDetailPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [unavailable, setUnavailable] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
 
   const endpointPath = `/projects/${projectId}/endpoints/${endpointId}`;
   const backTo = readNavValue(location.state, "from") ?? endpointPath;
@@ -71,7 +73,7 @@ function MessageDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [projectId, endpointId, messageId]);
+  }, [projectId, endpointId, messageId, reloadToken]);
 
   let body: ReactNode;
 
@@ -102,6 +104,7 @@ function MessageDetailPage() {
     );
   } else {
     const latestAttempt = message.attempts[message.attempts.length - 1] ?? null;
+    const deliveredByReplay = isDeliveredByReplay(message);
 
     body = (
       <>
@@ -123,6 +126,15 @@ function MessageDetailPage() {
               <CopyButton value={message.webhook_id} ariaLabel="Copy message webhook ID" />
               <span className="text-[#8A9990]">•</span>
               <span>{formatDateTime(message.created_at)}</span>
+
+              {deliveredByReplay && (
+                <>
+                  <span aria-hidden="true" className="text-[#8A9990]">
+                    •
+                  </span>
+                  <span className="font-semibold text-[#23613F]">Delivered by replay</span>
+                </>
+              )}
             </div>
           </div>
         </header>
@@ -272,6 +284,12 @@ function MessageDetailPage() {
             </div>
           )}
         </section>
+
+        <MessageReplayPanel
+          messageId={message.id}
+          replay={message.replay}
+          onReplayed={() => setReloadToken((token) => token + 1)}
+        />
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
           <section className="rounded-[18px] border border-[#D8E3DB] bg-white p-6 shadow-[0_8px_30px_rgba(32,78,53,0.05)] lg:col-span-2">

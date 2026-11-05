@@ -18,6 +18,7 @@ import EndpointDetailPage from "./pages/support/endpoints/EndpointDetailPage";
 import EndpointsPage from "./pages/support/endpoints/EndpointsPage";
 import ProjectDetailPage from "./pages/support/projects/ProjectDetailPage";
 import ProjectsPage from "./pages/support/projects/ProjectsPage";
+import ReplayPage from "./pages/support/replay/ReplayPage";
 import PlanPage from "./pages/support/settings/PlanPage";
 import SettingsPage from "./pages/support/settings/SettingsPage";
 import type { CurrentUser, UserProfile } from "./types/user";
@@ -127,6 +128,7 @@ function App() {
         <Route path="/endpoints" element={<EndpointsPage />} />
         <Route path="/deliveries" element={<DeliveriesPage />} />
         <Route path="/deliveries/rejections" element={<IngestRejectionsPage />} />
+        <Route path="/replay" element={<ReplayPage />} />
         <Route path="/projects/:projectId/endpoints/:endpointId" element={<EndpointDetailPage />} />
         <Route
           path="/projects/:projectId/endpoints/:endpointId/deliveries/:messageId"
