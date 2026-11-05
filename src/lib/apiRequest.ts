@@ -4,7 +4,7 @@ import { formatApiError } from "./apiError";
 
 export type ApiResult<T> =
   | { ok: true; data: T }
-  | { ok: false; error: string; status: number };
+  | { ok: false; error: string; status: number; data?: unknown };
 
 type HttpMethod = "GET" | "POST" | "PATCH" | "DELETE";
 
@@ -36,6 +36,7 @@ export async function apiRequest<T>(path: string, method: HttpMethod, body?: unk
         ok: false,
         error: formatApiError(data, "Something went wrong. Please try again."),
         status: response.status,
+        data,
       };
     }
 

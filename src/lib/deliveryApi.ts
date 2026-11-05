@@ -38,6 +38,11 @@ function buildPageParams(page?: number, perPage?: number): URLSearchParams {
 
 export type DeliverySearchKind = "message" | "request" | "text";
 
+export type MessageSearchParam = {
+  key: "q" | "message_id" | "request_id";
+  value: string;
+};
+
 export function readDeliverySearchKind(value: string): DeliverySearchKind {
   const normalized = value.trim();
 
@@ -47,16 +52,25 @@ export function readDeliverySearchKind(value: string): DeliverySearchKind {
   return "text";
 }
 
-function applySearch(query: URLSearchParams, value: string): void {
+export function readMessageSearchParam(value: string): MessageSearchParam | null {
   const normalized = value.trim();
 
-  if (!normalized) return;
+  if (!normalized) return null;
 
   const kind = readDeliverySearchKind(normalized);
 
-  if (kind === "message") query.set("message_id", normalized);
-  else if (kind === "request") query.set("request_id", normalized);
-  else query.set("q", normalized);
+  if (kind === "message") return { key: "message_id", value: normalized };
+  if (kind === "request") return { key: "request_id", value: normalized };
+
+  return { key: "q", value: normalized };
+}
+
+function applySearch(query: URLSearchParams, value: string): void {
+  const search = readMessageSearchParam(value);
+
+  if (!search) return;
+
+  query.set(search.key, search.value);
 }
 
 export function getDeliveries(

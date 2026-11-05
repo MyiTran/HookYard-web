@@ -2,7 +2,10 @@ import { deliveryLifecycleLabel } from "../../lib/deliveryStatus";
 import type { DeliveryMessageSummary, MessageStatus } from "../../types/delivery";
 
 type DeliveryLifecycleTextProps = {
-  message: Pick<DeliveryMessageSummary, "status" | "attempt_count" | "max_attempts" | "next_retry_at" | "retryable">;
+  message: Pick<
+    DeliveryMessageSummary,
+    "status" | "attempt_count" | "max_attempts" | "next_retry_at" | "retryable" | "replay"
+  >;
   className?: string;
 };
 
