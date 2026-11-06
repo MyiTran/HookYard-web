@@ -24,6 +24,7 @@ import {
   type ProjectQueryParams,
 } from "../../../lib/projectApi";
 import { createProjectApiCredential } from "../../../lib/apiCredentialApi";
+import { getProjectsMetrics, type ProjectMetrics } from "../../../lib/projectMetrics";
 import { readPageParam, setSearchParam } from "../../../lib/searchParams";
 import type { CreatedProjectApiCredential } from "../../../types/apiCredential";
 import type { PaginationMeta } from "../../../types/pagination";
@@ -65,6 +66,7 @@ function ProjectsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [metrics, setMetrics] = useState<Map<string, ProjectMetrics>>(new Map());
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -159,6 +161,26 @@ function ProjectsPage() {
       cancelled = true;
     };
   }, [changeVersion, loadInvitations]);
+
+  useEffect(() => {
+    if (projects.length === 0) return;
+
+    let cancelled = false;
+
+    async function load() {
+      const result = await getProjectsMetrics(projects.map((project) => project.id));
+
+      if (cancelled) return;
+
+      setMetrics(result.ok ? result.data : new Map());
+    }
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [projects]);
 
   function applyFilters(next: ProjectFilters) {
     setError("");
@@ -329,7 +351,7 @@ function ProjectsPage() {
 
                 <div className="divide-y divide-[#E4EBE6]">
                   {projects.map((project) => (
-                    <ProjectCard key={project.id} project={project} />
+                    <ProjectCard key={project.id} project={project} metrics={metrics.get(project.id)} />
                   ))}
                 </div>
               </div>
