@@ -138,7 +138,7 @@ const PRESENTATION_BY_LABEL = new Map<string, DiagnosisBase>(Object.entries(PRES
 
 const SOURCE_BADGES: Record<DiagnosisSource, DiagnosisSourceBadge> = {
   ai: { label: "AI analysis", tone: "purple" },
-  fallback: { label: "Rule-based fallback", tone: "neutral" },
+  fallback: { label: "Rule-based result", tone: "neutral" },
 };
 
 export function diagnosisPresentation(label: string): DiagnosisPresentation {

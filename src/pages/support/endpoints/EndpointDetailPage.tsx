@@ -319,13 +319,16 @@ function EndpointDetailPage() {
                 </span>
 
                 <div className="min-w-0">
-                  <h2 className="text-sm font-semibold tracking-tight text-[#1F2A24]">
-                    {circuitOpen ? "Delivery temporarily paused" : "Delivery requires attention"}
+                  <p className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
+                    Delivery protection
+                  </p>
+                  <h2 className="mt-1 text-lg font-semibold tracking-tight text-[#1F2A24]">
+                    {circuitOpen ? "Delivery temporarily paused" : "Delivery disabled"}
                   </h2>
-                  <p className="mt-1 max-w-2xl text-sm font-medium text-[#53665A]">
+                  <p className="mt-1 text-sm font-medium text-[#53665A]">
                     {circuitOpen
-                      ? "The receiver has repeatedly failed, so HookYard is protecting delivery traffic."
-                      : "Receiver checks kept failing during the protection window, so automatic delivery is disabled."}
+                      ? "The receiver kept failing, so delivery is paused while HookYard checks it."
+                      : "Receiver checks kept failing, so automatic delivery is paused."}
                   </p>
                 </div>
               </div>
@@ -334,7 +337,7 @@ function EndpointDetailPage() {
                 <Button
                   variant="primary"
                   size="md"
-                  className="shrink-0"
+                  className="w-full shrink-0 sm:w-auto"
                   disabled={reEnabling}
                   onClick={() => setShowReEnable(true)}
                 >
@@ -343,57 +346,61 @@ function EndpointDetailPage() {
               )}
             </div>
 
-            <dl className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
-                  Failures
-                </dt>
-                <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">
-                  {formatCount(circuit.failure_count)} consecutive failures
-                </dd>
-                <p className="mt-1 text-xs font-medium text-[#53665A]">
-                  Circuit opened after {formatCount(circuit.failure_threshold)} failures.
-                </p>
-              </div>
-
-              <div>
-                <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
-                  Circuit opened
-                </dt>
-                <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">
-                  {circuit.opened_at ? formatDateTime(circuit.opened_at) : "—"}
-                </dd>
-              </div>
-
-              <div>
-                <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
-                  Held deliveries
-                </dt>
-                <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">
-                  {formatCount(circuit.held_message_count)}
-                </dd>
-              </div>
-
+            <ul className="mt-4 flex flex-wrap items-center gap-2">
+              <li className="rounded-lg bg-white px-2.5 py-1 text-xs font-semibold text-[#1F2A24]">
+                {formatCount(circuit.failure_count)} failures
+              </li>
+              <li className="rounded-lg bg-white px-2.5 py-1 text-xs font-semibold text-[#1F2A24]">
+                {formatCount(circuit.held_message_count)} held
+              </li>
               {queue && (
-                <div>
-                  <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
-                    Delivery queue
-                  </dt>
-                  <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">
-                    {formatCount(queue.queued_count)} / {formatCount(queue.capacity)} queued
-                  </dd>
-                </div>
+                <li className="rounded-lg bg-white px-2.5 py-1 text-xs font-semibold text-[#1F2A24]">
+                  {formatCount(queue.queued_count)} / {formatCount(queue.capacity)} queued
+                </li>
               )}
-            </dl>
+            </ul>
 
             {circuitOpen && circuit.probe_in_flight && (
               <p className="mt-3 text-xs font-medium text-[#8A5D14]">Checking receiver…</p>
             )}
 
-            {deliveryDisabled && (
-              <p className="mt-3 text-xs font-medium text-[#B42318]">
+            {!isOwner && deliveryDisabled && (
+              <p className="mt-3 text-xs font-medium text-[#9A6B1F]">
                 Only a project owner can re-enable delivery.
               </p>
+            )}
+
+            {(circuit.opened_at || circuit.disable_window_ends_at) && (
+              <details className="group mt-3">
+                <summary className="cursor-pointer list-none text-xs font-semibold text-[#53665A] transition hover:underline [&::-webkit-details-marker]:hidden">
+                  <span className="group-open:hidden">Show protection details</span>
+                  <span className="hidden group-open:inline">Hide protection details</span>
+                </summary>
+
+                <dl className="mt-2 flex flex-wrap gap-x-8 gap-y-3">
+                  {circuit.opened_at && (
+                    <div>
+                      <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
+                        Circuit opened
+                      </dt>
+                      <dd className="mt-0.5 text-xs font-semibold text-[#1F2A24]">
+                        {formatDateTime(circuit.opened_at)}
+                      </dd>
+                    </div>
+                  )}
+
+                  {circuit.disable_window_ends_at && (
+                    <div>
+                      <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
+                        {deliveryDisabled ? "Protection window ended" : "Protection window ends"}
+                      </dt>
+                      <dd className="mt-0.5 text-xs font-semibold text-[#1F2A24]">
+                        {formatDateTime(circuit.disable_window_ends_at)}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              </details>
             )}
           </section>
         )}
@@ -437,7 +444,7 @@ function EndpointDetailPage() {
                 </dd>
               </div>
 
-              {circuit && !archived && (
+              {circuit?.state === "enabled" && !archived && (
                 <div>
                   <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
                     Circuit protection

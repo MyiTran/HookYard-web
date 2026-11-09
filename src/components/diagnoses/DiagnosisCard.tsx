@@ -61,48 +61,72 @@ function DiagnosisCard({ projectId, endpointId }: DiagnosisCardProps) {
     <section
       aria-labelledby={titleId}
       aria-busy={loading}
-      className="mt-6 rounded-[18px] border border-[#D8E3DB] bg-white p-6 shadow-[0_8px_30px_rgba(32,78,53,0.05)]"
+      className="mt-6 rounded-[18px] border border-[#DDD4F3] bg-[#FAF8FE] p-5 shadow-[0_8px_30px_rgba(32,78,53,0.05)]"
     >
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 gap-3">
           <span
             aria-hidden="true"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#E4EFE7] text-[#23613F]"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#E6DDF8] text-[#5B47A6]"
           >
             <SparkIcon className="h-4 w-4" />
           </span>
 
           <div className="min-w-0">
-            <h2 id={titleId} className="text-sm font-semibold tracking-tight text-[#1F2A24]">
-              Diagnose delivery failures
-            </h2>
-            <p className="mt-1 max-w-2xl text-sm font-medium text-[#53665A]">
-              Analyze recent failed attempts to identify a likely cause. Diagnosis does not send or change
-              deliveries.
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-[#E6DDF8] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[2px] text-[#5B47A6]">
+                AI
+              </span>
+              <h2 id={titleId} className="text-sm font-semibold tracking-tight text-[#1F2A24]">
+                AI failure diagnosis
+              </h2>
+            </div>
+
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+              <p className="text-sm font-medium text-[#53665A]">
+                Find the likely cause from recent failed attempts.
+              </p>
+              <span className="rounded-md border border-[#DDD4F3] bg-white px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[1px] text-[#5B47A6]">
+                Read-only
+              </span>
+            </div>
           </div>
         </div>
 
-        <Button
-          variant={diagnosis ? "secondary" : "primary"}
-          size="md"
-          className="shrink-0"
-          disabled={loading}
-          onClick={() => setConfirming(true)}
-        >
-          {diagnosis ? "Analyze again" : "Analyze recent failures"}
-        </Button>
+        {!diagnosis && (
+          <Button
+            variant="primary"
+            size="md"
+            className="w-full shrink-0 sm:w-auto"
+            disabled={loading}
+            onClick={() => setConfirming(true)}
+          >
+            Analyze failures
+          </Button>
+        )}
       </div>
 
-      {loading && (
-        <p role="status" className="mt-4 flex items-center gap-2 text-sm font-medium text-[#53665A]">
-          <span
-            aria-hidden="true"
-            className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#C9DACE] border-t-[#23613F]"
-          />
-          Reviewing recent redacted attempts…
-        </p>
-      )}
+      <div aria-live="polite">
+        {loading && (
+          <p className="mt-4 flex items-center gap-2 text-sm font-medium text-[#53665A]">
+            <span
+              aria-hidden="true"
+              className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#DDD4F3] border-t-[#5B47A6]"
+            />
+            Analyzing recent failed attempts…
+          </p>
+        )}
+
+        {diagnosis && (
+          <div ref={resultRef} tabIndex={-1} className="outline-none">
+            <DiagnosisResultCard
+              diagnosis={diagnosis}
+              loading={loading}
+              onAnalyzeAgain={() => setConfirming(true)}
+            />
+          </div>
+        )}
+      </div>
 
       {unavailable && (
         <div
@@ -125,16 +149,6 @@ function DiagnosisCard({ projectId, endpointId }: DiagnosisCardProps) {
           {error}
         </div>
       )}
-
-      {diagnosis && (
-        <div ref={resultRef} tabIndex={-1} className="outline-none">
-          <DiagnosisResultCard diagnosis={diagnosis} />
-        </div>
-      )}
-
-      <p className="mt-4 text-xs font-medium text-[#8A9990]">
-        Analysis only. HookYard never sends a webhook or changes delivery state from this card.
-      </p>
 
       {confirming && <DiagnosisConfirmModal onConfirm={runDiagnosis} onCancel={() => setConfirming(false)} />}
     </section>
