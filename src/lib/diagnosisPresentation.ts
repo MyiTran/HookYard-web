@@ -127,6 +127,11 @@ const PRESENTATIONS: Record<DiagnosisLabel, DiagnosisBase> = {
     title: "Endpoint is no longer available",
     Icon: SearchAlertIcon,
   },
+  receiver_server_error: {
+    accent: "orange",
+    title: "Receiver server error",
+    Icon: AlertTriangleIcon,
+  },
   unknown: {
     accent: "neutral",
     title: "Cause could not be determined",

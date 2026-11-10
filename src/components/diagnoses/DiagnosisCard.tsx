@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { createEndpointDiagnosis } from "../../lib/diagnosisApi";
+import { createEndpointDiagnosis, getLatestEndpointDiagnosis } from "../../lib/diagnosisApi";
 import type { EndpointDiagnosis } from "../../types/diagnosis";
 import SparkIcon from "../icons/SparkIcon";
 import Button from "../ui/Button";
@@ -24,13 +24,50 @@ function DiagnosisCard({ projectId, endpointId }: DiagnosisCardProps) {
   const [diagnosis, setDiagnosis] = useState<EndpointDiagnosis | null>(null);
   const [error, setError] = useState("");
   const [unavailable, setUnavailable] = useState(false);
+  const [latestError, setLatestError] = useState("");
+  const postedRef = useRef(false);
+  const shouldFocusResult = useRef(false);
+  const shouldFocusError = useRef(false);
 
   useEffect(() => {
-    if (diagnosis) resultRef.current?.focus();
+    let cancelled = false;
+
+    async function loadLatest() {
+      const result = await getLatestEndpointDiagnosis(projectId, endpointId);
+
+      if (cancelled || postedRef.current) return;
+
+      if (!result.ok) {
+        if (result.status === 404 || result.status === 403) {
+          setUnavailable(true);
+        } else {
+          setLatestError("Latest saved analysis could not be loaded.");
+        }
+        return;
+      }
+
+      if (result.data) setDiagnosis(result.data);
+    }
+
+    loadLatest();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId, endpointId]);
+
+  useEffect(() => {
+    if (diagnosis && shouldFocusResult.current) {
+      resultRef.current?.focus();
+      shouldFocusResult.current = false;
+    }
   }, [diagnosis]);
 
   useEffect(() => {
-    if (error || unavailable) errorRef.current?.focus();
+    if ((error || unavailable) && shouldFocusError.current) {
+      errorRef.current?.focus();
+      shouldFocusError.current = false;
+    }
   }, [error, unavailable]);
 
   async function runDiagnosis() {
@@ -41,6 +78,7 @@ function DiagnosisCard({ projectId, endpointId }: DiagnosisCardProps) {
     setLoading(true);
     setError("");
     setUnavailable(false);
+    setLatestError("");
 
     const result = await createEndpointDiagnosis(projectId, endpointId);
 
@@ -49,11 +87,14 @@ function DiagnosisCard({ projectId, endpointId }: DiagnosisCardProps) {
 
     if (!result.ok) {
       setDiagnosis(null);
+      shouldFocusError.current = true;
       setUnavailable(result.status === 404 || result.status === 403);
       setError(result.error);
       return;
     }
 
+    postedRef.current = true;
+    shouldFocusResult.current = true;
     setDiagnosis(result.data);
   }
 
@@ -82,14 +123,9 @@ function DiagnosisCard({ projectId, endpointId }: DiagnosisCardProps) {
               </h2>
             </div>
 
-            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-              <p className="text-sm font-medium text-[#53665A]">
-                Find the likely cause from recent failed attempts.
-              </p>
-              <span className="rounded-md border border-[#DDD4F3] bg-white px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[1px] text-[#5B47A6]">
-                Read-only
-              </span>
-            </div>
+            <p className="mt-1 text-sm font-medium text-[#53665A]">
+              Find the likely cause from recent failed attempts.
+            </p>
           </div>
         </div>
 
@@ -127,6 +163,10 @@ function DiagnosisCard({ projectId, endpointId }: DiagnosisCardProps) {
           </div>
         )}
       </div>
+
+      {!unavailable && !diagnosis && latestError && (
+        <p className="mt-4 text-sm font-medium text-[#8A9990]">{latestError}</p>
+      )}
 
       {unavailable && (
         <div

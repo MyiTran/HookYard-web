@@ -7,6 +7,7 @@ export type DiagnosisLabel =
   | "rate_limited"
   | "tls_failure"
   | "endpoint_gone"
+  | "receiver_server_error"
   | "unknown";
 
 export type DiagnosisSource = "ai" | "fallback";
