@@ -4,7 +4,14 @@ import NotificationsProvider from "./components/notifications/NotificationsProvi
 import ToastProvider from "./components/ui/ToastProvider";
 import { API_URL } from "./config";
 import { toCurrentUser } from "./lib/currentUser";
-import AdminDashboardPage from "./pages/admin/dashboard/DashboardPage";
+import AdminAccountDetailPage from "./pages/admin/accounts/AdminAccountDetailPage";
+import AdminAccountsPage from "./pages/admin/accounts/AdminAccountsPage";
+import AdminDeliveriesPage from "./pages/admin/deliveries/AdminDeliveriesPage";
+import AdminEndpointDetailPage from "./pages/admin/endpoints/AdminEndpointDetailPage";
+import AdminEndpointsPage from "./pages/admin/endpoints/AdminEndpointsPage";
+import AdminOverviewPage from "./pages/admin/overview/AdminOverviewPage";
+import AdminProjectDetailPage from "./pages/admin/projects/AdminProjectDetailPage";
+import AdminProjectsPage from "./pages/admin/projects/AdminProjectsPage";
 import ConfirmAccountPage from "./pages/auth/ConfirmAccountPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import LoginPage from "./pages/auth/LoginPage";
@@ -109,7 +116,7 @@ function AdminRoute() {
     return <Navigate to="/" replace />;
   }
 
-  return <AdminDashboardPage />;
+  return <Outlet context={user} />;
 }
 
 function App() {
@@ -136,7 +143,16 @@ function App() {
         />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/settings/plan" element={<PlanPage />} />
-        <Route path="/admin" element={<AdminRoute />} />
+        <Route path="/admin" element={<AdminRoute />}>
+          <Route index element={<AdminOverviewPage />} />
+          <Route path="accounts" element={<AdminAccountsPage />} />
+          <Route path="accounts/:accountId" element={<AdminAccountDetailPage />} />
+          <Route path="projects" element={<AdminProjectsPage />} />
+          <Route path="projects/:projectId" element={<AdminProjectDetailPage />} />
+          <Route path="endpoints" element={<AdminEndpointsPage />} />
+          <Route path="endpoints/:endpointId" element={<AdminEndpointDetailPage />} />
+          <Route path="deliveries" element={<AdminDeliveriesPage />} />
+        </Route>
       </Route>
 
       <Route path="*" element={<Navigate to="/users/sign_in" replace />} />
