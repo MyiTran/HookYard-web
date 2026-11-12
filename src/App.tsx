@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet, Route, Routes, useOutletContext } from "react-router-dom";
 import NotificationsProvider from "./components/notifications/NotificationsProvider";
+import AccountPlanProvider from "./components/plan/AccountPlanProvider";
 import ToastProvider from "./components/ui/ToastProvider";
 import { API_URL } from "./config";
 import { toCurrentUser } from "./lib/currentUser";
@@ -17,6 +18,8 @@ import EndpointDetailPage from "./pages/support/endpoints/EndpointDetailPage";
 import EndpointsPage from "./pages/support/endpoints/EndpointsPage";
 import ProjectDetailPage from "./pages/support/projects/ProjectDetailPage";
 import ProjectsPage from "./pages/support/projects/ProjectsPage";
+import PlanPage from "./pages/support/settings/PlanPage";
+import SettingsPage from "./pages/support/settings/SettingsPage";
 import type { CurrentUser, UserProfile } from "./types/user";
 
 const isAuthenticated = () => Boolean(localStorage.getItem("token"));
@@ -88,10 +91,14 @@ function PrivateRoute() {
     return <Navigate to="/users/sign_in" replace />;
   }
 
+  const user = toCurrentUser(profile);
+
   return (
     <ToastProvider>
       <NotificationsProvider>
-        <Outlet context={toCurrentUser(profile)} />
+        <AccountPlanProvider user={user}>
+          <Outlet context={user} />
+        </AccountPlanProvider>
       </NotificationsProvider>
     </ToastProvider>
   );
@@ -128,6 +135,8 @@ function App() {
           path="/projects/:projectId/endpoints/:endpointId/deliveries/:messageId"
           element={<MessageDetailPage />}
         />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/settings/plan" element={<PlanPage />} />
         <Route path="/admin" element={<AdminRoute />} />
       </Route>
 

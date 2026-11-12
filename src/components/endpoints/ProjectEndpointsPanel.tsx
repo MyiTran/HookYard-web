@@ -9,6 +9,7 @@ import Pagination from "../ui/Pagination";
 import { useToast } from "../ui/toastContext";
 import EndpointCircuitBadge from "./EndpointCircuitBadge";
 import EndpointFormModal, { type EndpointFormValues } from "./EndpointFormModal";
+import EndpointPlanLockBadge from "./EndpointPlanLockBadge";
 import EndpointStatusBadge from "./EndpointStatusBadge";
 import SigningSecretDialog from "./SigningSecretDialog";
 
@@ -117,6 +118,7 @@ function ProjectEndpointsPanel({ project }: ProjectEndpointsPanelProps) {
                 <span className="flex min-w-0 flex-wrap items-center justify-end gap-2">
                   <EndpointStatusBadge active={endpoint.active} archived={Boolean(endpoint.archived_at)} />
                   <EndpointCircuitBadge circuit={endpoint.circuit} archived={Boolean(endpoint.archived_at)} />
+                  <EndpointPlanLockBadge planLocked={endpoint.plan_locked} />
                 </span>
               </Link>
             ))}

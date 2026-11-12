@@ -56,6 +56,7 @@ export type Endpoint = {
   signing_secret_last_rotated_at: string | null;
   circuit?: EndpointCircuit;
   queue?: EndpointQueue;
+  plan_locked: boolean;
   project: EndpointProject;
 };
 
