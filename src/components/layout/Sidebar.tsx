@@ -29,7 +29,7 @@ function Sidebar({ user, onNavigate, className = "" }: SidebarProps) {
   const menuItems: MenuItem[] = isAdmin
     ? [
         { name: "Overview", path: "/admin", exact: true },
-        { name: "Support accounts", path: "/admin/users" },
+        { name: "Support accounts", path: "/admin/accounts" },
         { name: "Projects", path: "/admin/projects" },
         { name: "Endpoints", path: "/admin/endpoints" },
         { name: "Deliveries", path: "/admin/deliveries" },

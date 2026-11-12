@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Link, useOutletContext } from "react-router-dom";
+import { Link, useNavigate, useOutletContext } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
 import AccountPlanSummaryCard from "../../../components/plan/AccountPlanSummaryCard";
 import PlanOptionCard from "../../../components/plan/PlanOptionCard";
@@ -33,6 +33,7 @@ function PlanAction({ plan, currentPlan, onSelect }: PlanActionProps) {
 
 function PlanPage() {
   const user = useOutletContext<CurrentUser>();
+  const navigate = useNavigate();
   const { showToast } = useToast();
 
   const [account, setAccount] = useState<AccountPlan | null>(null);
@@ -43,9 +44,18 @@ function PlanPage() {
   const [switchError, setSwitchError] = useState("");
 
   useEffect(() => {
+    if (user.role !== "admin") return;
+
+    showToast({ type: "error", message: "Customer plan management is available in Admin → Accounts." });
+    navigate("/settings", { replace: true });
+  }, [user.role, navigate, showToast]);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function load() {
+      if (user.role === "admin") return;
+
       setLoading(true);
       setLoadError("");
 
@@ -68,7 +78,7 @@ function PlanPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [user.role]);
 
   async function handleConfirmSwitch() {
     if (!switchTarget) return;
@@ -91,6 +101,8 @@ function PlanPage() {
   }
 
   const availablePlans = account?.available_plans ?? null;
+
+  if (user.role === "admin") return null;
 
   let body: ReactNode;
 
