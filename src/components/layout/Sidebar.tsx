@@ -40,7 +40,6 @@ function Sidebar({ user, onNavigate, className = "" }: SidebarProps) {
         { name: "Endpoints", path: "/endpoints" },
         { name: "Deliveries", path: "/deliveries" },
         { name: "Recover deliveries", path: "/replay" },
-        { name: "Diagnose", path: "/diagnose" },
       ];
 
   function closeUserMenu() {

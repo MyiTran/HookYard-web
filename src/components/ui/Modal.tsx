@@ -8,12 +8,13 @@ type ModalProps = {
   children: ReactNode;
   footer?: ReactNode;
   dismissible?: boolean;
+  describedById?: string;
 };
 
 const SCROLL_CLASS =
   "min-h-0 flex-1 overflow-y-auto px-6 pb-6 sm:px-7 [scrollbar-width:thin] [scrollbar-color:#C2D4C7_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#C2D4C7] [&::-webkit-scrollbar-track]:bg-transparent";
 
-function Modal({ title, onClose, children, footer, dismissible = true }: ModalProps) {
+function Modal({ title, onClose, children, footer, dismissible = true, describedById }: ModalProps) {
   const titleId = useId();
   const { dialogRef, handleDialogKeyDown } = useDialogFocusTrap({ onClose, dismissible });
 
@@ -27,6 +28,7 @@ function Modal({ title, onClose, children, footer, dismissible = true }: ModalPr
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        aria-describedby={describedById}
         tabIndex={-1}
         onKeyDown={handleDialogKeyDown}
         onMouseDown={(event) => event.stopPropagation()}
