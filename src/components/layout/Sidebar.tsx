@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import Brand from "../branding/Brand";
 import SlidersIcon from "../icons/SlidersIcon";
 import Button from "../ui/Button";
-import { signOut } from "../../lib/auth";
+import { API_URL } from "../../config";
 import { readNavValue } from "../../lib/navState";
 import type { CurrentUser } from "../../types/user";
 import MenuIcon from "./MenuIcon";
@@ -21,7 +21,7 @@ function isMenuActive(currentPath: string, item: MenuItem): boolean {
 function Sidebar({ user, onNavigate, className = "" }: SidebarProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const isAdmin = user.role === "admin";
-  
+
   const location = useLocation();
   const section = readNavValue(location.state, "section");
   const currentPath = section ? `/${section}` : location.pathname;
@@ -42,6 +42,21 @@ function Sidebar({ user, onNavigate, className = "" }: SidebarProps) {
         { name: "Replay", path: "/replay" },
         { name: "Diagnose", path: "/diagnose" },
       ];
+
+  async function logout() {
+    const token = localStorage.getItem("token");
+
+    await fetch(`${API_URL}/auth/sign_out`, {
+      method: "DELETE",
+      headers: {
+        "Accept": "application/json",
+        "Authorization": token || "",
+      },
+    });
+
+    localStorage.removeItem("token");
+    window.location.href = "/users/sign_in";
+  }
 
   function closeUserMenu() {
     setShowUserMenu(false);
@@ -97,21 +112,23 @@ function Sidebar({ user, onNavigate, className = "" }: SidebarProps) {
               <p className="truncate text-xs text-[#607267]">{user.email}</p>
             </div>
 
-            <Link
-              to="/settings"
-              onClick={closeUserMenu}
-              className="mt-2 flex h-10 w-full items-center gap-2 rounded-xl px-4 text-sm font-semibold text-[#405348] transition hover:bg-[#F1F6F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#23613F]/30"
-            >
-              <SlidersIcon />
-              Settings
-            </Link>
+            {!isAdmin && (
+              <Link
+                to="/settings"
+                onClick={closeUserMenu}
+                className="mt-2 flex h-10 w-full items-center gap-2 rounded-xl px-4 text-sm font-semibold text-[#405348] transition hover:bg-[#F1F6F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#23613F]/30"
+              >
+                <SlidersIcon />
+                Settings
+              </Link>
+            )}
 
             <Button
               variant="dangerSoft"
               size="md"
               className="mt-1 w-full justify-start"
               onClick={() => {
-                void signOut();
+                void logout();
               }}
             >
               Sign out

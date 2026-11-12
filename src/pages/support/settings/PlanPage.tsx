@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Link, useOutletContext } from "react-router-dom";
+import { Link, Navigate, useOutletContext } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
 import AccountPlanSummaryCard from "../../../components/plan/AccountPlanSummaryCard";
 import PlanOptionCard from "../../../components/plan/PlanOptionCard";
@@ -34,6 +34,7 @@ function PlanAction({ plan, currentPlan, onSelect }: PlanActionProps) {
 function PlanPage() {
   const user = useOutletContext<CurrentUser>();
   const { showToast } = useToast();
+  const isAdmin = user.role === "admin";
 
   const [account, setAccount] = useState<AccountPlan | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,6 +44,8 @@ function PlanPage() {
   const [switchError, setSwitchError] = useState("");
 
   useEffect(() => {
+    if (isAdmin) return;
+
     let cancelled = false;
 
     async function load() {
@@ -68,7 +71,11 @@ function PlanPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isAdmin]);
+
+  if (isAdmin) {
+    return <Navigate to="/settings" replace />;
+  }
 
   async function handleConfirmSwitch() {
     if (!switchTarget) return;
