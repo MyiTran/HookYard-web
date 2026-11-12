@@ -61,11 +61,15 @@ function setPageParam(params: URLSearchParams, page: number): void {
 }
 
 function readFilters(params: URLSearchParams): DeliveryFilters {
+  const deliveryState = params.get("delivery_state");
+  const status: DeliveryStatusFilter =
+    deliveryState === "held_by_circuit" ? "held_by_circuit" : readStatus(params.get("status"));
+
   return {
     q: params.get("q") ?? "",
     projectId: params.get("project_id") ?? "",
     endpointId: params.get("endpoint_id") ?? "",
-    status: readStatus(params.get("status")),
+    status,
     eventType: params.get("event_type") ?? "",
     from: readDate(params.get("from")),
     to: readDate(params.get("to")),
@@ -79,7 +83,8 @@ function buildFilterParams(filters: DeliveryFilters, pageSize: number): URLSearc
   if (filters.q) params.set("q", filters.q);
   if (filters.projectId) params.set("project_id", filters.projectId);
   if (filters.endpointId) params.set("endpoint_id", filters.endpointId);
-  if (filters.status !== DEFAULT_STATUS) params.set("status", filters.status);
+  if (filters.status === "held_by_circuit") params.set("delivery_state", filters.status);
+  else if (filters.status !== DEFAULT_STATUS) params.set("status", filters.status);
   if (filters.eventType) params.set("event_type", filters.eventType);
   if (filters.from) params.set("from", filters.from);
   if (filters.to) params.set("to", filters.to);
@@ -172,7 +177,8 @@ function DeliveriesPage() {
         q: filters.q || undefined,
         projectId: filters.projectId || undefined,
         endpointId: filters.endpointId || undefined,
-        status: filters.status === "all" ? undefined : filters.status,
+        status: filters.status === "all" || filters.status === "held_by_circuit" ? undefined : filters.status,
+        deliveryState: filters.status === "held_by_circuit" ? filters.status : undefined,
         eventType: filters.eventType || undefined,
         from: filters.from || undefined,
         to: filters.to || undefined,

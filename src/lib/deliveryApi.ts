@@ -2,6 +2,7 @@ import type {
   DeliveryMessageDetail,
   DeliveryMessageSummary,
   DeliveryOrder,
+  DeliveryStateFilter,
   GlobalDeliveryMessageSummary,
   MessageStatus,
 } from "../types/delivery";
@@ -16,6 +17,7 @@ export type DeliveryQuery = {
   projectId?: string;
   endpointId?: string;
   status?: MessageStatus;
+  deliveryState?: DeliveryStateFilter;
   eventType?: string;
   from?: string;
   to?: string;
@@ -49,6 +51,7 @@ export function getDeliveries(
   if (params.projectId) query.set("project_id", params.projectId);
   if (params.endpointId) query.set("endpoint_id", params.endpointId);
   if (params.status) query.set("status", params.status);
+  if (params.deliveryState) query.set("delivery_state", params.deliveryState);
   if (params.eventType) query.set("event_type", params.eventType);
   if (params.from) query.set("from", toRangeBound(params.from, "start"));
   if (params.to) query.set("to", toRangeBound(params.to, "end"));

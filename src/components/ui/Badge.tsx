@@ -28,7 +28,7 @@ const DOT_STYLES: Record<BadgeTone, string> = {
 
 function Badge({ tone, dot = false, children }: BadgeProps) {
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${TONE_STYLES[tone]}`}>
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${TONE_STYLES[tone]}`}>
       {dot && <span className={`h-1.5 w-1.5 rounded-full ${DOT_STYLES[tone]}`} />}
       {children}
     </span>
