@@ -1,5 +1,5 @@
 declare module "@rails/actioncable" {
-  export type ChannelIdentifier = string | { channel: string };
+  export type ChannelIdentifier = string | { channel: string; [key: string]: unknown };
 
   export type SubscriptionCallbacks = {
     connected?: () => void;

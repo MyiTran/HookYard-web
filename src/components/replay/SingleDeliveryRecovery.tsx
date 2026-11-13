@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useProjectRealtime } from "../../hooks/useProjectRealtime";
 import { formatDateTime } from "../../lib/dateFormat";
 import { getDeliveries } from "../../lib/deliveryApi";
 import { formatCount } from "../../lib/numberFormat";
@@ -8,6 +9,7 @@ import DeliveryStatusBadge from "../deliveries/DeliveryStatusBadge";
 import HttpStatusBadge from "../deliveries/HttpStatusBadge";
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";
+import LiveStatusBadge from "../ui/LiveStatusBadge";
 import SingleReplayControl from "./SingleReplayControl";
 
 const MATCH_LIMIT = 10;
@@ -27,6 +29,13 @@ function SingleDeliveryRecovery() {
   const [refreshError, setRefreshError] = useState("");
 
   const selected = matches?.find((message) => message.id === selectedId) ?? null;
+
+  const { status: realtimeStatus } = useProjectRealtime({
+    projectId: selected?.project.id ?? null,
+    messageId: selected?.id ?? null,
+    onReplayChanged: refreshSelected,
+    onConnected: refreshSelected,
+  });
 
   async function handleSearch() {
     const query = term.trim();
@@ -184,7 +193,10 @@ function SingleDeliveryRecovery() {
         <div className="mt-4 rounded-xl border border-[#D8E3DB] bg-[#F7FAF8] p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Selected delivery</h3>
-            <span className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">One delivery</span>
+            <div className="flex items-center gap-2">
+              <LiveStatusBadge status={realtimeStatus} />
+              <span className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">One delivery</span>
+            </div>
           </div>
 
           <dl className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

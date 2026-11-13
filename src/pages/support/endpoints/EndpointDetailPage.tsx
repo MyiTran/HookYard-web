@@ -19,7 +19,9 @@ import RefreshIcon from "../../../components/icons/RefreshIcon";
 import Button from "../../../components/ui/Button";
 import ConfirmDialog from "../../../components/ui/ConfirmDialog";
 import ContextualHelp from "../../../components/ui/ContextualHelp";
+import LiveStatusBadge from "../../../components/ui/LiveStatusBadge";
 import { useToast } from "../../../components/ui/toastContext";
+import { useProjectRealtime } from "../../../hooks/useProjectRealtime";
 import type { ApiResult } from "../../../lib/apiRequest";
 import { formatDateTime } from "../../../lib/dateFormat";
 import { archiveEndpoint, getEndpoint, reEnableEndpointDelivery, rotateSigningSecret, updateEndpoint } from "../../../lib/endpointApi";
@@ -59,6 +61,7 @@ function EndpointDetailPage() {
   const [togglingActive, setTogglingActive] = useState(false);
   const [showReEnable, setShowReEnable] = useState(false);
   const [reEnabling, setReEnabling] = useState(false);
+  const [deliveryRefreshToken, setDeliveryRefreshToken] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -92,6 +95,31 @@ function EndpointDetailPage() {
       cancelled = true;
     };
   }, [projectId, endpointId]);
+
+  async function refreshEndpoint() {
+    const endpointResult = await getEndpoint(projectId, endpointId);
+
+    if (!endpointResult.ok) return;
+
+    setEndpoint(endpointResult.data);
+
+    const projectResult = await getProject(projectId);
+
+    if (projectResult.ok) setProject(projectResult.data);
+  }
+
+  function refreshEndpointAndActivity() {
+    void refreshEndpoint();
+    setDeliveryRefreshToken((token) => token + 1);
+  }
+
+  const { status: realtimeStatus } = useProjectRealtime({
+    projectId: endpoint ? projectId : null,
+    endpointId: endpointId || null,
+    onMessageChanged: refreshEndpointAndActivity,
+    onEndpointChanged: refreshEndpointAndActivity,
+    onConnected: refreshEndpointAndActivity,
+  });
 
   async function handleUpdate(values: EndpointFormValues) {
     const result = await updateEndpoint(projectId, endpointId, {
@@ -261,6 +289,7 @@ function EndpointDetailPage() {
               <EndpointStatusBadge active={endpoint.active} archived={archived} />
               <EndpointCircuitBadge circuit={circuit} archived={archived} />
               <EndpointPlanLockBadge planLocked={endpoint.plan_locked} />
+              <LiveStatusBadge status={realtimeStatus} />
             </div>
 
             <p className="mt-2 truncate text-sm font-medium text-[#53665A]">{endpoint.url}</p>
@@ -567,6 +596,7 @@ function EndpointDetailPage() {
           origin={navState}
           heldMessageCount={circuit?.held_message_count ?? 0}
           circuitState={circuit?.state}
+          refreshSignal={deliveryRefreshToken}
         />
 
         {showEdit && project && (
