@@ -21,14 +21,18 @@ function isTimeoutError(errorType: string): boolean {
   return errorType.toLowerCase().includes("timeout");
 }
 
+function hasMaxAttempts(maxAttempts?: number | null): maxAttempts is number {
+  return typeof maxAttempts === "number" && Number.isInteger(maxAttempts) && maxAttempts > 0;
+}
+
 export function formatAttemptProgress(attemptCount: number, maxAttempts?: number | null): string {
-  if (typeof maxAttempts !== "number") return `Attempt ${attemptCount}`;
+  if (!hasMaxAttempts(maxAttempts)) return `Attempt ${attemptCount}`;
 
   return `Attempt ${attemptCount} of ${maxAttempts}`;
 }
 
 export function formatAttemptsUsed(attemptCount: number, maxAttempts?: number | null): string {
-  if (typeof maxAttempts !== "number") return String(attemptCount);
+  if (!hasMaxAttempts(maxAttempts)) return String(attemptCount);
 
   return `${attemptCount} of ${maxAttempts}`;
 }
@@ -74,7 +78,7 @@ export function deliveryLifecycleLabel(message: DeliveryLifecycleState): string 
   if (message.status === "succeeded") return "Delivered";
 
   const attemptsUsed = formatAttemptsUsed(message.attempt_count, message.max_attempts);
-  const attemptsLabel = typeof message.max_attempts === "number" ? "attempts" : attemptWord(message.attempt_count);
+  const attemptsLabel = hasMaxAttempts(message.max_attempts) ? "attempts" : attemptWord(message.attempt_count);
 
   return `Failed after ${attemptsUsed} ${attemptsLabel}`;
 }

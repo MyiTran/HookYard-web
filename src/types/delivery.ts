@@ -99,10 +99,10 @@ export type DeliveryAttempt = {
   signing_secret_version: number;
   signed_at: string;
   created_at: string;
-  request_url: string;
+  request_url: string | null;
   http_method: string;
-  request_headers: Record<string, string>;
-  request_body: string;
+  request_headers: Record<string, string> | null;
+  request_body: string | null;
   response_status: number | null;
   response_headers: Record<string, string> | null;
   response_body: string | null;

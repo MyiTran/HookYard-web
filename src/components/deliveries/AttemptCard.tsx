@@ -131,7 +131,9 @@ function AttemptCard({ attempt }: AttemptCardProps) {
         <MetaItem label="Signed at">{formatDateTime(attempt.signed_at)}</MetaItem>
 
         <MetaItem label="Request URL" className="sm:col-span-2 lg:col-span-3">
-          <span className="break-all font-mono text-[11px] font-medium text-[#405348]">{attempt.request_url}</span>
+          <span className="break-all font-mono text-[11px] font-medium text-[#405348]">
+            {attempt.request_url ?? "Not available"}
+          </span>
         </MetaItem>
       </dl>
 
@@ -150,22 +152,40 @@ function AttemptCard({ attempt }: AttemptCardProps) {
         <div className="mt-4 grid gap-4 border-t border-[#E4EBE6] pt-4 lg:grid-cols-2">
           {bodiesPurgedAt && <RetentionNotice purgedAt={bodiesPurgedAt} />}
 
-          <PayloadBlock label="Request headers" value={attempt.request_headers} isHeaders />
+          <PayloadBlock
+            label="Request headers"
+            value={attempt.request_headers}
+            isHeaders
+            emptyLabel="No request headers captured."
+          />
 
           {bodiesPurgedAt ? (
             <EvidenceNote>Request body was removed by the retention policy.</EvidenceNote>
           ) : (
-            <PayloadBlock label="Request body" value={attempt.request_body} />
+            <PayloadBlock
+              label="Request body"
+              value={attempt.request_body}
+              emptyLabel="No request body was recorded."
+            />
           )}
 
           {hasResponse ? (
             <>
-              <PayloadBlock label="Response headers" value={attempt.response_headers} isHeaders />
+              <PayloadBlock
+                label="Response headers"
+                value={attempt.response_headers}
+                isHeaders
+                emptyLabel="No response headers captured."
+              />
 
               {bodiesPurgedAt ? (
                 <EvidenceNote>Response body was removed by the retention policy.</EvidenceNote>
               ) : (
-                <PayloadBlock label="Response body" value={attempt.response_body} />
+                <PayloadBlock
+                  label="Response body"
+                  value={attempt.response_body}
+                  emptyLabel="No response body was recorded."
+                />
               )}
             </>
           ) : (

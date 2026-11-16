@@ -21,7 +21,10 @@ const MOBILE_LABEL_CLASS = "text-[10px] font-semibold uppercase tracking-[2px] t
 
 function GlobalDeliveryRow({ message, backTo }: GlobalDeliveryRowProps) {
   const inProgress =
-    message.status === "delivering" && message.last_response_status === null && !message.last_error_type;
+    message.status === "delivering" &&
+    message.last_response_status === null &&
+    !message.last_error_type &&
+    !message.failure_category;
   const receivedAt = formatDateTime(message.created_at);
   const lastAttemptLabel = message.last_attempt_at
     ? `Last attempt ${formatDateTime(message.last_attempt_at)}`
