@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Brand from "../branding/Brand";
+import SlidersIcon from "../icons/SlidersIcon";
 import Button from "../ui/Button";
 import { API_URL } from "../../config";
+import { useAccountPlan } from "../../hooks/accountPlanContext";
 import { readNavValue } from "../../lib/navState";
 import type { CurrentUser } from "../../types/user";
+import { planLabel } from "../../lib/plan";
 import MenuIcon from "./MenuIcon";
 
 type SidebarProps = { user: CurrentUser; onNavigate?: () => void; className?: string };
@@ -20,7 +23,9 @@ function isMenuActive(currentPath: string, item: MenuItem): boolean {
 function Sidebar({ user, onNavigate, className = "" }: SidebarProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const isAdmin = user.role === "admin";
-  
+  const { account, loading } = useAccountPlan();
+  const profileLabel = isAdmin ? "Admin" : loading || !account ? "Account" : planLabel(account.plan);
+
   const location = useLocation();
   const section = readNavValue(location.state, "section");
   const currentPath = section ? `/${section}` : location.pathname;
@@ -47,14 +52,19 @@ function Sidebar({ user, onNavigate, className = "" }: SidebarProps) {
 
     await fetch(`${API_URL}/auth/sign_out`, {
       method: "DELETE",
-      headers: { 
-        "Accept": "application/json", 
-        "Authorization": token || "" 
+      headers: {
+        "Accept": "application/json",
+        "Authorization": token || "",
       },
     });
 
     localStorage.removeItem("token");
     window.location.href = "/users/sign_in";
+  }
+
+  function closeUserMenu() {
+    setShowUserMenu(false);
+    onNavigate?.();
   }
 
   return (
@@ -94,7 +104,7 @@ function Sidebar({ user, onNavigate, className = "" }: SidebarProps) {
 
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-semibold">{user.name}</span>
-            <span className="block text-xs font-medium capitalize text-[#607267]">{user.role}</span>
+            <span className="block text-xs font-medium text-[#607267]">{profileLabel}</span>
           </span>
 
           <span className="text-xs text-[#607267]">⌃</span>
@@ -106,7 +116,25 @@ function Sidebar({ user, onNavigate, className = "" }: SidebarProps) {
               <p className="truncate text-xs text-[#607267]">{user.email}</p>
             </div>
 
-            <Button variant="dangerSoft" size="md" className="mt-2 w-full justify-start" onClick={logout}>
+            {!isAdmin && (
+              <Link
+                to="/settings"
+                onClick={closeUserMenu}
+                className="mt-2 flex h-10 w-full items-center gap-2 rounded-xl px-4 text-sm font-semibold text-[#405348] transition hover:bg-[#F1F6F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#23613F]/30"
+              >
+                <SlidersIcon />
+                Settings
+              </Link>
+            )}
+
+            <Button
+              variant="dangerSoft"
+              size="md"
+              className="mt-1 w-full justify-start"
+              onClick={() => {
+                void logout();
+              }}
+            >
               Sign out
             </Button>
           </div>
