@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useOutletContext, useSearchParams } from "react-router-dom";
 import DeliveryFilterBar from "../../../components/deliveries/DeliveryFilterBar";
+import DeliveryLogTabs from "../../../components/deliveries/DeliveryLogTabs";
 import GlobalDeliveryRow, {
   GLOBAL_DELIVERY_ROW_GRID_COLS,
 } from "../../../components/deliveries/GlobalDeliveryRow";
@@ -352,7 +353,9 @@ function DeliveriesPage() {
         )}
       </div>
 
-      <div className="mt-8">
+      <DeliveryLogTabs />
+
+      <div className="mt-4">
         <DeliveryFilterBar
           filters={filters}
           projects={projects}

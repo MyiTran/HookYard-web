@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { readDeliverySearchKind } from "../../lib/deliveryApi";
 import type {
   DeliveryFilterKey,
   DeliveryFilters,
@@ -88,10 +89,19 @@ type FilterChip = {
   label: string;
 };
 
+function searchChipLabel(search: string): string {
+  const kind = readDeliverySearchKind(search);
+
+  if (kind === "message") return `Message ID: ${search}`;
+  if (kind === "request") return `Request ID: ${search}`;
+
+  return `Search: ${search}`;
+}
+
 function buildChips(filters: DeliveryFilters, projects: Project[], endpoints: Endpoint[]): FilterChip[] {
   const chips: FilterChip[] = [];
 
-  if (filters.q) chips.push({ key: "q", label: `Search: ${filters.q}` });
+  if (filters.q) chips.push({ key: "q", label: searchChipLabel(filters.q) });
   if (filters.projectId) {
     const project = projects.find((item) => item.id === filters.projectId);
     chips.push({ key: "projectId", label: `Project: ${project?.name ?? filters.projectId}` });

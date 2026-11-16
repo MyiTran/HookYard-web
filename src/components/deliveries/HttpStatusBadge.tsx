@@ -3,6 +3,7 @@ import { attemptFailureShortLabel } from "../../lib/deliveryStatus";
 type HttpStatusBadgeProps = {
   status: number | null;
   errorType?: string | null;
+  failureCategory?: string | null;
 };
 
 const TONE_CLASSES = {
@@ -22,15 +23,15 @@ function toneFor(status: number): keyof typeof TONE_CLASSES {
   return "neutral";
 }
 
-function HttpStatusBadge({ status, errorType }: HttpStatusBadgeProps) {
+function HttpStatusBadge({ status, errorType, failureCategory }: HttpStatusBadgeProps) {
   if (status === null) {
     return (
       <span
         className={`inline-flex rounded-md px-1.5 py-0.5 text-xs font-semibold ${
-          errorType ? TONE_CLASSES.clientError : TONE_CLASSES.neutral
+          errorType || failureCategory ? TONE_CLASSES.clientError : TONE_CLASSES.neutral
         }`}
       >
-        {attemptFailureShortLabel(errorType)}
+        {attemptFailureShortLabel(failureCategory, errorType)}
       </span>
     );
   }
