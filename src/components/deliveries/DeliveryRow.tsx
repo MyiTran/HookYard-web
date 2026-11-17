@@ -74,7 +74,8 @@ function DeliveryRow({ message, projectId, endpointId, endpointName, origin, pag
               <span className="text-[#8A9990]">Result </span>
               {message.status === "delivering" &&
               message.last_response_status === null &&
-              !message.last_error_type ? (
+              !message.last_error_type &&
+              !message.failure_category ? (
                 <span className="font-semibold text-[#2563A8]">In progress</span>
               ) : (
                 <HttpStatusBadge

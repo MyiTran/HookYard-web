@@ -8,12 +8,12 @@ import type {
 } from "../../types/delivery";
 import type { Endpoint } from "../../types/endpoint";
 import type { Project } from "../../types/project";
-import FilterChipList, { type FilterChip } from "../filters/FilterChipList";
-import FilterDateRange from "../filters/FilterDateRange";
+import FilterClearButton from "../filters/FilterClearButton";
 import FilterSearchInput from "../filters/FilterSearchInput";
 import FilterSelect from "../filters/FilterSelect";
 import FilterToolbar from "../filters/FilterToolbar";
 import ChevronDownIcon from "../icons/ChevronDownIcon";
+import CloseIcon from "../icons/CloseIcon";
 import SlidersIcon from "../icons/SlidersIcon";
 import Button from "../ui/Button";
 import Modal from "../ui/Modal";
@@ -79,7 +79,15 @@ const STATUS_LABELS: Record<DeliveryStatusFilter, string> = {
 const TEXT_INPUT_CLASS =
   "h-11 w-full min-w-0 rounded-xl border border-[#C9DACE] bg-white px-3.5 text-sm outline-none transition placeholder:text-[#A4B0A8] focus:border-[#23613F] focus:ring-2 focus:ring-[#23613F]/10";
 
+const DATE_FIELD_CLASS =
+  "flex h-11 w-full min-w-0 items-center gap-2 rounded-xl border border-[#C9DACE] bg-white px-3 text-sm transition focus-within:border-[#23613F] focus-within:ring-2 focus-within:ring-[#23613F]/10";
+
 const FIELD_LABEL = "mb-1.5 block text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]";
+
+type FilterChip = {
+  key: DeliveryFilterKey;
+  label: string;
+};
 
 function searchChipLabel(search: string): string {
   const kind = readDeliverySearchKind(search);
@@ -90,12 +98,8 @@ function searchChipLabel(search: string): string {
   return `Search: ${search}`;
 }
 
-function buildChips(
-  filters: DeliveryFilters,
-  projects: Project[],
-  endpoints: Endpoint[],
-): FilterChip<DeliveryFilterKey>[] {
-  const chips: FilterChip<DeliveryFilterKey>[] = [];
+function buildChips(filters: DeliveryFilters, projects: Project[], endpoints: Endpoint[]): FilterChip[] {
+  const chips: FilterChip[] = [];
 
   if (filters.q) chips.push({ key: "q", label: searchChipLabel(filters.q) });
   if (filters.projectId) {
@@ -110,8 +114,8 @@ function buildChips(
     chips.push({ key: "status", label: `Status: ${STATUS_LABELS[filters.status]}` });
   }
   if (filters.eventType) chips.push({ key: "eventType", label: `Event: ${filters.eventType}` });
-  if (filters.from) chips.push({ key: "from", label: `From ${filters.from} UTC` });
-  if (filters.to) chips.push({ key: "to", label: `To ${filters.to} UTC` });
+  if (filters.from) chips.push({ key: "from", label: `From: ${filters.from}` });
+  if (filters.to) chips.push({ key: "to", label: `To: ${filters.to}` });
   if (filters.order !== DEFAULT_ORDER) chips.push({ key: "order", label: "Oldest first" });
 
   return chips;
@@ -149,14 +153,63 @@ function AdvancedFilterFields({
         />
       </div>
 
-      <FilterDateRange
-        idPrefix={`${idPrefix}Range`}
-        layout={layout}
-        from={fromDraft}
-        to={toDraft}
-        onFromChange={onFromDraftChange}
-        onToChange={onToDraftChange}
-      />
+      {isRow ? (
+        <>
+          <label className={`${DATE_FIELD_CLASS} w-full sm:w-44`}>
+            <span className="shrink-0 text-xs font-semibold text-[#8A9990]">From</span>
+            <input
+              id={`${idPrefix}From`}
+              type="date"
+              value={fromDraft}
+              onChange={(event) => onFromDraftChange(event.target.value)}
+              aria-label="From date"
+              className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+            />
+          </label>
+
+          <label className={`${DATE_FIELD_CLASS} w-full sm:w-44`}>
+            <span className="shrink-0 text-xs font-semibold text-[#8A9990]">To</span>
+            <input
+              id={`${idPrefix}To`}
+              type="date"
+              value={toDraft}
+              onChange={(event) => onToDraftChange(event.target.value)}
+              aria-label="To date"
+              className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+            />
+          </label>
+        </>
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor={`${idPrefix}From`} className={FIELD_LABEL}>
+              From
+            </label>
+
+            <input
+              id={`${idPrefix}From`}
+              type="date"
+              value={fromDraft}
+              onChange={(event) => onFromDraftChange(event.target.value)}
+              className={TEXT_INPUT_CLASS}
+            />
+          </div>
+
+          <div>
+            <label htmlFor={`${idPrefix}To`} className={FIELD_LABEL}>
+              To
+            </label>
+
+            <input
+              id={`${idPrefix}To`}
+              type="date"
+              value={toDraft}
+              onChange={(event) => onToDraftChange(event.target.value)}
+              className={TEXT_INPUT_CLASS}
+            />
+          </div>
+        </div>
+      )}
 
       <div className={isRow ? "w-full sm:w-44" : ""}>
         <label htmlFor={`${idPrefix}Order`} className={labelClass}>
@@ -230,7 +283,7 @@ function DeliveryFilterBar({
     setShowMobileFilters(false);
   }
 
-  const hasFooter = showMore || chips.length > 0;
+  const hasFooter = showMore || isFiltered;
 
   return (
     <>
@@ -256,7 +309,35 @@ function DeliveryFilterBar({
                 </div>
               )}
 
-              <FilterChipList chips={chips} onRemove={onRemoveFilter} onClear={onReset} />
+              {isFiltered && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {chips.map((chip) => (
+                    <span
+                      key={chip.key}
+                      className="inline-flex max-w-full items-center gap-1 rounded-full bg-[#EFF5F1] py-1 pl-2.5 pr-1.5 text-xs font-semibold text-[#405348]"
+                    >
+                      <span className="min-w-0 truncate" title={chip.label}>
+                        {chip.label}
+                      </span>
+
+                      <button
+                        type="button"
+                        aria-label={`Remove filter ${chip.label}`}
+                        onClick={() => onRemoveFilter(chip.key)}
+                        className="flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-[#718078] transition hover:bg-[#D8E3DB] hover:text-[#1F2A24]"
+                      >
+                        <CloseIcon className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+
+                  {isFiltered && (
+                    <span className="ml-auto hidden xl:block">
+                      <FilterClearButton onClick={onReset} compact />
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           ) : undefined
         }
@@ -265,9 +346,9 @@ function DeliveryFilterBar({
           id="deliverySearch"
           value={searchDraft}
           onChange={onSearchDraftChange}
-          placeholder="Search Message ID or Request ID"
-          label="Search by message ID or request ID"
-          className="w-full xl:w-auto xl:min-w-[13rem] xl:flex-1"
+          placeholder="Search message, webhook or request ID"
+          label="Search deliveries"
+          className="w-full xl:w-auto xl:min-w-[9rem] xl:flex-1"
         />
 
         <div className="hidden items-center gap-2 xl:flex">
@@ -293,7 +374,7 @@ function DeliveryFilterBar({
               onFiltersChange({ ...filters, status: value as DeliveryStatusFilter })
             }
             options={STATUS_OPTIONS}
-            ariaLabel="Filter by status or delivery state"
+            ariaLabel="Filter by status"
             className="w-40"
           />
 
@@ -333,6 +414,8 @@ function DeliveryFilterBar({
               </span>
             )}
           </Button>
+
+          {isFiltered && <FilterClearButton onClick={onReset} compact />}
         </div>
       </FilterToolbar>
 
@@ -343,7 +426,7 @@ function DeliveryFilterBar({
           footer={
             <div className="flex items-center justify-between gap-3">
               <Button variant="ghost" size="md" onClick={handleMobileReset} disabled={!isFiltered}>
-                Clear all
+                Clear filters
               </Button>
 
               <Button variant="primary" size="md" onClick={handleMobileApply}>
@@ -385,7 +468,7 @@ function DeliveryFilterBar({
 
             <div>
               <label htmlFor="mobileDeliveryStatus" className={FIELD_LABEL}>
-                Status or delivery state
+                Status
               </label>
 
               <FilterSelect
@@ -395,7 +478,7 @@ function DeliveryFilterBar({
                   onFiltersChange({ ...filters, status: value as DeliveryStatusFilter })
                 }
                 options={STATUS_OPTIONS}
-                ariaLabel="Filter by status or delivery state"
+                ariaLabel="Filter by status"
                 className="w-full"
               />
             </div>

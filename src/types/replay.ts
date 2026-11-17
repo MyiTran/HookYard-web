@@ -101,3 +101,10 @@ export type MessageReplay = {
   active: boolean;
   last_outcome: ReplayLastOutcome | null;
 };
+
+export type ReplayQuotaError = {
+  eligible: number | null;
+  used: number | null;
+  limit: number | null;
+  period_ends: string | null;
+};
