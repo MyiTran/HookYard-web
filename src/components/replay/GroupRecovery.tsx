@@ -22,6 +22,7 @@ import {
   replayLimitWarning,
   type ReplayLimit,
 } from "../../lib/replayLimit";
+import { useProjectRealtime } from "../../hooks/useProjectRealtime";
 import type { DeliveryOrder } from "../../types/delivery";
 import type { Endpoint } from "../../types/endpoint";
 import type { Project } from "../../types/project";
@@ -81,6 +82,24 @@ function GroupRecovery() {
   const [pollError, setPollError] = useState("");
   const [pollingPaused, setPollingPaused] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  async function refreshRunSilently() {
+    if (!run) return;
+
+    const result = await getReplayRun(run.project_id, run.id);
+
+    if (!result.ok) return;
+
+    setPollError("");
+    setRun(result.data);
+  }
+
+  const { status: realtimeStatus } = useProjectRealtime({
+    projectId: run?.project_id ?? null,
+    replayRunId: run?.id ?? null,
+    onReplayChanged: refreshRunSilently,
+    onConnected: refreshRunSilently,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -510,6 +529,7 @@ function GroupRecovery() {
             pollingPaused={pollingPaused}
             refreshing={refreshing}
             pollError={pollError}
+            liveStatus={realtimeStatus}
             onRefresh={handleRefreshRun}
           />
         </div>

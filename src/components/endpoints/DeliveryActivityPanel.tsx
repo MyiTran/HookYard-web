@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { DELIVERIES_PAGE_SIZE, listEndpointMessages } from "../../lib/deliveryApi";
 import { formatCount } from "../../lib/numberFormat";
@@ -18,6 +18,7 @@ type DeliveryActivityPanelProps = {
   origin: NavState;
   heldMessageCount?: number;
   circuitState?: EndpointCircuitState;
+  refreshSignal?: number;
 };
 
 function readPage(value: string | null): number {
@@ -33,6 +34,7 @@ function DeliveryActivityPanel({
   origin,
   heldMessageCount = 0,
   circuitState,
+  refreshSignal = 0,
 }: DeliveryActivityPanelProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const page = readPage(searchParams.get("deliveries_page"));
@@ -42,12 +44,16 @@ function DeliveryActivityPanel({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reloadToken, setReloadToken] = useState(0);
+  const previousRefreshSignalRef = useRef(refreshSignal);
 
   useEffect(() => {
+    const silentRefresh = refreshSignal !== previousRefreshSignalRef.current;
+    previousRefreshSignalRef.current = refreshSignal;
+
     let cancelled = false;
 
     async function load() {
-      setLoading(true);
+      if (!silentRefresh) setLoading(true);
 
       const result = await listEndpointMessages(projectId, endpointId, page, DELIVERIES_PAGE_SIZE);
 
@@ -78,7 +84,7 @@ function DeliveryActivityPanel({
     return () => {
       cancelled = true;
     };
-  }, [projectId, endpointId, page, reloadToken]);
+  }, [projectId, endpointId, page, reloadToken, refreshSignal]);
 
   useEffect(() => {
     if (!meta || page <= meta.last_page) return;

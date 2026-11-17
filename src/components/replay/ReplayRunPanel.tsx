@@ -1,8 +1,10 @@
 import { formatDateTime } from "../../lib/dateFormat";
 import { REPLAY_HELD_GUIDANCE, replayRunStateNote } from "../../lib/replayStatus";
+import type { ProjectRealtimeStatus } from "../../hooks/useProjectRealtime";
 import type { ReplayRun } from "../../types/replay";
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";
+import LiveStatusBadge from "../ui/LiveStatusBadge";
 import ReplayRunStatusBadge from "./ReplayRunStatusBadge";
 import ReplaySummaryGrid from "./ReplaySummaryGrid";
 
@@ -12,6 +14,7 @@ type ReplayRunPanelProps = {
   pollingPaused: boolean;
   refreshing: boolean;
   pollError: string;
+  liveStatus?: ProjectRealtimeStatus;
   onRefresh: () => void;
 };
 
@@ -31,6 +34,7 @@ function ReplayRunPanel({
   pollingPaused,
   refreshing,
   pollError,
+  liveStatus,
   onRefresh,
 }: ReplayRunPanelProps) {
   const completed = run.status === "completed";
@@ -43,6 +47,7 @@ function ReplayRunPanel({
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Bulk replay run</h2>
             <ReplayRunStatusBadge status={run.status} />
+            {liveStatus && <LiveStatusBadge status={liveStatus} />}
             {waitingForRecovery && (
               <Badge tone="amber" dot>
                 Waiting for endpoint recovery
