@@ -12,6 +12,7 @@ const STATUS_TONES: Record<ReplayRunStatus, BadgeTone> = {
   queued: "neutral",
   running: "blue",
   completed: "green",
+  failed: "red",
 };
 
 function ReplayRunStatusBadge({ status }: ReplayRunStatusBadgeProps) {

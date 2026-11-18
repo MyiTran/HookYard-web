@@ -167,7 +167,7 @@ function GroupRecovery() {
   const waitingForRecovery = run ? isReplayRunWaitingForRecovery(run) : false;
 
   useEffect(() => {
-    if (!runId || runStatus === "completed" || pollingPaused) return;
+    if (!runId || runStatus === "completed" || runStatus === "failed" || pollingPaused) return;
 
     let cancelled = false;
 
