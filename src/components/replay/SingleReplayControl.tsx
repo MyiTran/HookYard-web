@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatDateTime } from "../../lib/dateFormat";
-import { replayMessage } from "../../lib/replayApi";
+import { REPLAY_HELD_POLL_INTERVAL_MS, REPLAY_POLL_INTERVAL_MS, replayMessage } from "../../lib/replayApi";
 import { readReplayQuotaError, singleReplayQuotaMessage } from "../../lib/replayQuota";
 import {
   REPLAY_ENDPOINT_PAUSED_MESSAGE,
@@ -69,6 +69,27 @@ function SingleReplayControl({ messageId, replay, onReplayed }: SingleReplayCont
   const alreadySucceeded = replay.blocked_reason === "message_not_failed";
   const endpointPaused = replay.blocked_reason === "endpoint_paused";
   const quotaMessage = quotaError ? singleReplayQuotaMessage(quotaError) : null;
+
+  const onReplayedRef = useRef(onReplayed);
+
+  useEffect(() => {
+    onReplayedRef.current = onReplayed;
+  }, [onReplayed]);
+
+  const activeReplayStatus = replay.active ? replay.last_outcome?.status ?? "queued" : null;
+  const shouldPoll = activeReplayStatus !== null && isReplayInProgress(activeReplayStatus);
+  const pollInterval =
+    activeReplayStatus === "held" ? REPLAY_HELD_POLL_INTERVAL_MS : REPLAY_POLL_INTERVAL_MS;
+
+  useEffect(() => {
+    if (!shouldPoll) return;
+
+    const interval = window.setInterval(() => {
+      onReplayedRef.current();
+    }, pollInterval);
+
+    return () => window.clearInterval(interval);
+  }, [shouldPoll, pollInterval]);
 
   async function handleReplay() {
     setPending(true);
