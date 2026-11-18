@@ -16,7 +16,7 @@ type DeliveryActivityPanelProps = {
   endpointId: string;
   endpointName: string;
   origin: NavState;
-  heldMessageCount?: number;
+  heldCount?: number;
   circuitState?: EndpointCircuitState;
   refreshSignal?: number;
 };
@@ -32,7 +32,7 @@ function DeliveryActivityPanel({
   endpointId,
   endpointName,
   origin,
-  heldMessageCount = 0,
+  heldCount = 0,
   circuitState,
   refreshSignal = 0,
 }: DeliveryActivityPanelProps) {
@@ -178,10 +178,10 @@ function DeliveryActivityPanel({
         )}
       </div>
 
-      {heldMessageCount > 0 && (
+      {heldCount > 0 && (
         <div className="mt-4 rounded-xl border border-[#E8D5B5] bg-[#FBF7EC] px-4 py-3 text-sm font-medium text-[#8A5D14]">
-          {formatCount(heldMessageCount)}{" "}
-          {heldMessageCount === 1 ? "delivery is" : "deliveries are"} waiting while{" "}
+          {formatCount(heldCount)}{" "}
+          {heldCount === 1 ? "delivery is" : "deliveries are"} waiting while{" "}
           {circuitState === "disabled" ? "delivery is disabled" : "circuit protection is active"}.
         </div>
       )}

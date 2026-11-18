@@ -34,6 +34,10 @@ import type { CurrentUser } from "../../../types/user";
 
 const MASKED_SECRET = "••••••••••••••••";
 
+function formatOptionalCount(value?: number | null): string {
+  return typeof value === "number" && Number.isFinite(value) ? formatCount(value) : "—";
+}
+
 function EndpointDetailPage() {
   const user = useOutletContext<CurrentUser>();
   const navigate = useNavigate();
@@ -359,6 +363,9 @@ function EndpointDetailPage() {
                       ? "The receiver kept failing, so delivery is paused while HookYard checks it."
                       : "Receiver checks kept failing, so automatic delivery is paused."}
                   </p>
+                  <p className="mt-2 text-xs font-medium text-[#8A9990]">
+                    Held deliveries are kept safely and will resume after delivery is re-enabled or the receiver recovers.
+                  </p>
                 </div>
               </div>
 
@@ -380,13 +387,19 @@ function EndpointDetailPage() {
                 {formatCount(circuit.failure_count)} failures
               </li>
               <li className="rounded-lg bg-white px-2.5 py-1 text-xs font-semibold text-[#1F2A24]">
-                {formatCount(circuit.held_message_count)} held
+                {formatOptionalCount(circuit.held_count)} held by delivery protection
               </li>
               {queue && (
                 <li className="rounded-lg bg-white px-2.5 py-1 text-xs font-semibold text-[#1F2A24]">
-                  {formatCount(queue.queued_count)} / {formatCount(queue.capacity)} queued
+                  {formatOptionalCount(queue.backlog_total)} / {formatOptionalCount(queue.capacity)} deliveries waiting
                 </li>
               )}
+              {queue && (
+                <li className="rounded-lg bg-white px-2.5 py-1 text-xs font-semibold text-[#1F2A24]">
+                  {formatOptionalCount(queue.dispatchable_count)} ready to process
+                </li>
+              )}
+
             </ul>
 
             {circuitOpen && circuit.probe_in_flight && (
@@ -443,8 +456,8 @@ function EndpointDetailPage() {
             }`}
           >
             {queue.state === "full"
-              ? `Delivery queue is full (${formatCount(queue.queued_count)} of ${formatCount(queue.capacity)}). New events may be rejected until capacity is available.`
-              : `Delivery queue is filling up (${formatCount(queue.queued_count)} of ${formatCount(queue.capacity)}). Monitor delivery health before sending high volumes.`}
+              ? `Delivery queue is full (${formatOptionalCount(queue.backlog_total)} of ${formatOptionalCount(queue.capacity)}). New events may be rejected until capacity is available.`
+              : `Delivery queue is filling up (${formatOptionalCount(queue.backlog_total)} of ${formatOptionalCount(queue.capacity)}). Monitor delivery health before sending high volumes.`}
           </div>
         )}
 
@@ -490,7 +503,10 @@ function EndpointDetailPage() {
                     Delivery queue
                   </dt>
                   <dd className="mt-1 text-sm font-semibold text-[#1F2A24]">
-                    {formatCount(queue.queued_count)} / {formatCount(queue.capacity)} queued
+                    {formatOptionalCount(queue.backlog_total)} / {formatOptionalCount(queue.capacity)} deliveries waiting
+                  </dd>
+                  <dd className="mt-1 text-xs font-medium text-[#8A9990]">
+                    {formatOptionalCount(queue.dispatchable_count)} ready to process
                   </dd>
                 </div>
               )}
@@ -594,7 +610,7 @@ function EndpointDetailPage() {
           endpointId={endpointId}
           endpointName={endpoint.name}
           origin={navState}
-          heldMessageCount={circuit?.held_message_count ?? 0}
+          heldCount={circuit?.held_count ?? 0}
           circuitState={circuit?.state}
           refreshSignal={deliveryRefreshToken}
         />

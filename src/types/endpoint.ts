@@ -29,7 +29,7 @@ export type EndpointCircuit = {
   disable_window_ends_at: string | null;
   next_probe_at: string | null;
   probe_in_flight: boolean;
-  held_message_count: number;
+  held_count?: number;
   last_probe?: EndpointCircuitProbe | null;
 };
 
@@ -37,8 +37,9 @@ export type EndpointQueueState = "ok" | "warning" | "full";
 
 export type EndpointQueue = {
   state: EndpointQueueState;
-  queued_count: number;
-  capacity: number;
+  backlog_total?: number;
+  dispatchable_count?: number;
+  capacity?: number;
 };
 
 export type Endpoint = {
