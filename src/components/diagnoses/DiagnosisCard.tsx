@@ -12,6 +12,18 @@ type DiagnosisCardProps = {
 };
 
 const UNAVAILABLE_MESSAGE = "This endpoint does not exist or you do not have access to it.";
+const COOLDOWN_MESSAGE = "Analysis was requested recently. Please wait a few seconds and try again.";
+const DEFAULT_COOLDOWN_SECONDS = 5;
+
+function retryAfterSeconds(data: unknown): number {
+  if (data && typeof data === "object") {
+    const value = (data as Record<string, unknown>).retry_after;
+
+    if (typeof value === "number" && Number.isFinite(value) && value > 0) return Math.ceil(value);
+  }
+
+  return DEFAULT_COOLDOWN_SECONDS;
+}
 
 function DiagnosisCard({ projectId, endpointId }: DiagnosisCardProps) {
   const titleId = useId();
@@ -21,10 +33,12 @@ function DiagnosisCard({ projectId, endpointId }: DiagnosisCardProps) {
 
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingLatest, setLoadingLatest] = useState(true);
   const [diagnosis, setDiagnosis] = useState<EndpointDiagnosis | null>(null);
   const [error, setError] = useState("");
   const [unavailable, setUnavailable] = useState(false);
   const [latestError, setLatestError] = useState("");
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const postedRef = useRef(false);
   const shouldFocusResult = useRef(false);
   const shouldFocusError = useRef(false);
@@ -35,7 +49,11 @@ function DiagnosisCard({ projectId, endpointId }: DiagnosisCardProps) {
     async function loadLatest() {
       const result = await getLatestEndpointDiagnosis(projectId, endpointId);
 
-      if (cancelled || postedRef.current) return;
+      if (cancelled) return;
+
+      setLoadingLatest(false);
+
+      if (postedRef.current) return;
 
       if (!result.ok) {
         if (result.status === 404 || result.status === 403) {
@@ -70,6 +88,14 @@ function DiagnosisCard({ projectId, endpointId }: DiagnosisCardProps) {
     }
   }, [error, unavailable]);
 
+  useEffect(() => {
+    if (cooldownSeconds <= 0) return;
+
+    const timer = setTimeout(() => setCooldownSeconds((seconds) => seconds - 1), 1000);
+
+    return () => clearTimeout(timer);
+  }, [cooldownSeconds]);
+
   async function runDiagnosis() {
     if (requestInFlight.current) return;
 
@@ -86,22 +112,34 @@ function DiagnosisCard({ projectId, endpointId }: DiagnosisCardProps) {
     setLoading(false);
 
     if (!result.ok) {
-      setDiagnosis(null);
+      const isUnavailable = result.status === 404 || result.status === 403;
+
       shouldFocusError.current = true;
-      setUnavailable(result.status === 404 || result.status === 403);
-      setError(result.error);
+      setUnavailable(isUnavailable);
+
+      if (isUnavailable) {
+        setDiagnosis(null);
+        setError("");
+      } else if (result.status === 429) {
+        setError(COOLDOWN_MESSAGE);
+        setCooldownSeconds(retryAfterSeconds(result.data));
+      } else {
+        setError(result.error);
+      }
+
       return;
     }
 
     postedRef.current = true;
     shouldFocusResult.current = true;
+    setCooldownSeconds(0);
     setDiagnosis(result.data);
   }
 
   return (
     <section
       aria-labelledby={titleId}
-      aria-busy={loading}
+      aria-busy={loading || loadingLatest}
       className="mt-6 rounded-[18px] border border-[#DDD4F3] bg-[#FAF8FE] p-5 shadow-[0_8px_30px_rgba(32,78,53,0.05)]"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -134,10 +172,10 @@ function DiagnosisCard({ projectId, endpointId }: DiagnosisCardProps) {
             variant="primary"
             size="md"
             className="w-full shrink-0 sm:w-auto"
-            disabled={loading}
+            disabled={loading || loadingLatest || cooldownSeconds > 0}
             onClick={() => setConfirming(true)}
           >
-            Analyze failures
+            {loadingLatest ? "Loading…" : "Analyze failures"}
           </Button>
         )}
       </div>
@@ -157,7 +195,7 @@ function DiagnosisCard({ projectId, endpointId }: DiagnosisCardProps) {
           <div ref={resultRef} tabIndex={-1} className="outline-none">
             <DiagnosisResultCard
               diagnosis={diagnosis}
-              loading={loading}
+              disabled={loading || cooldownSeconds > 0}
               onAnalyzeAgain={() => setConfirming(true)}
             />
           </div>

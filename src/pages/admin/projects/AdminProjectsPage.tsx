@@ -7,6 +7,7 @@ import FilterSearchInput from "../../../components/filters/FilterSearchInput";
 import FilterSelect from "../../../components/filters/FilterSelect";
 import FilterToolbar from "../../../components/filters/FilterToolbar";
 import AppLayout from "../../../components/layout/AppLayout";
+import Button from "../../../components/ui/Button";
 import Pagination from "../../../components/ui/Pagination";
 import { getAdminAccount, getAdminProjects } from "../../../lib/adminApi";
 import { readPageParam, setSearchParam } from "../../../lib/searchParams";
@@ -55,6 +56,7 @@ function AdminProjectsPage() {
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [reloadToken, setReloadToken] = useState(0);
   const [accountName, setAccountName] = useState("");
 
   const [searchDraft, setSearchDraft] = useState(searchQuery);
@@ -137,7 +139,7 @@ function AdminProjectsPage() {
     return () => {
       cancelled = true;
     };
-  }, [searchQuery, accountId, plan, sort, page, setSearchParams]);
+  }, [searchQuery, accountId, plan, sort, page, reloadToken, setSearchParams]);
 
   function applyFilters(next: { search: string; plan: ProjectPlanFilter; sort: ProjectSort }) {
     setError("");
@@ -173,6 +175,11 @@ function AdminProjectsPage() {
     setSearchParams(params);
   }
 
+  function handleRetry() {
+    setError("");
+    setReloadToken((token) => token + 1);
+  }
+
   const isFiltered = searchQuery !== "" || accountId !== "" || plan !== "all" || sort !== "created_desc";
   const accountChipLabel = accountName ? `Projects billed to ${accountName}` : `Account: ${accountId}`;
 
@@ -187,49 +194,52 @@ function AdminProjectsPage() {
       </div>
 
       <section className="mt-8">
+        {accountId && (
+          <div className="mb-3">
+            <AdminContextChip label={accountChipLabel} onClear={handleClearAccountContext} />
+          </div>
+        )}
+
+        <FilterToolbar onSubmit={handleSearchSubmit}>
+          <FilterSearchInput
+            id="admin-project-search"
+            value={searchDraft}
+            onChange={setSearchDraft}
+            placeholder="Search projects"
+            label="Search projects"
+            className="w-full sm:w-80"
+          />
+
+          <FilterSelect
+            value={plan}
+            onChange={(value) => applyFilters({ search: searchQuery, plan: value as ProjectPlanFilter, sort })}
+            options={PLAN_OPTIONS}
+            ariaLabel="Filter by plan"
+            className="sm:w-36"
+          />
+
+          <FilterSelect
+            value={sort}
+            onChange={(value) => applyFilters({ search: searchQuery, plan, sort: value as ProjectSort })}
+            options={SORT_OPTIONS}
+            ariaLabel="Sort projects"
+            className="sm:w-40"
+          />
+
+          <FilterClearButton onClick={handleReset} />
+        </FilterToolbar>
+
         {loading && projects.length === 0 && !isFiltered ? (
-          <p className="text-sm font-medium text-[#607267]">Loading projects...</p>
+          <p className="mt-5 text-sm font-medium text-[#607267]">Loading projects...</p>
         ) : error ? (
-          <div className="rounded-[18px] border border-[#F1D5D5] bg-[#FBEEEE] px-6 py-8 text-sm font-medium text-[#B42318]">
-            {error}
+          <div role="alert" className="mt-5 rounded-[18px] border border-[#F1D5D5] bg-[#FBEEEE] px-6 py-8">
+            <p className="text-sm font-medium text-[#B42318]">{error}</p>
+            <Button variant="secondary" size="md" className="mt-4" onClick={handleRetry}>
+              Try again
+            </Button>
           </div>
         ) : (
           <>
-            {accountId && (
-              <div className="mb-3">
-                <AdminContextChip label={accountChipLabel} onClear={handleClearAccountContext} />
-              </div>
-            )}
-
-            <FilterToolbar onSubmit={handleSearchSubmit}>
-              <FilterSearchInput
-                id="admin-project-search"
-                value={searchDraft}
-                onChange={setSearchDraft}
-                placeholder="Search projects"
-                label="Search projects"
-                className="w-full sm:w-80"
-              />
-
-              <FilterSelect
-                value={plan}
-                onChange={(value) => applyFilters({ search: searchQuery, plan: value as ProjectPlanFilter, sort })}
-                options={PLAN_OPTIONS}
-                ariaLabel="Filter by plan"
-                className="sm:w-36"
-              />
-
-              <FilterSelect
-                value={sort}
-                onChange={(value) => applyFilters({ search: searchQuery, plan, sort: value as ProjectSort })}
-                options={SORT_OPTIONS}
-                ariaLabel="Sort projects"
-                className="sm:w-40"
-              />
-
-              <FilterClearButton onClick={handleReset} />
-            </FilterToolbar>
-
             {loading ? (
               <p className="mt-5 text-sm font-medium text-[#607267]">Loading projects...</p>
             ) : projects.length === 0 ? (

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatDateTime } from "../../lib/dateFormat";
-import { replayMessage } from "../../lib/replayApi";
+import { REPLAY_HELD_POLL_INTERVAL_MS, REPLAY_POLL_INTERVAL_MS, replayMessage } from "../../lib/replayApi";
+import { readReplayQuotaError, singleReplayQuotaMessage } from "../../lib/replayQuota";
 import {
   REPLAY_ENDPOINT_PAUSED_MESSAGE,
   REPLAY_HELD_GUIDANCE,
@@ -8,7 +9,7 @@ import {
   replayItemOutcomeLabel,
   replayRequestErrorMessage,
 } from "../../lib/replayStatus";
-import type { MessageReplay, ReplayItem, ReplayItemStatus, ReplayRun } from "../../types/replay";
+import type { MessageReplay, ReplayItem, ReplayItemStatus, ReplayQuotaError, ReplayRun } from "../../types/replay";
 import AlertTriangleIcon from "../icons/AlertTriangleIcon";
 import Button from "../ui/Button";
 import ReplayStatusBadge from "./ReplayStatusBadge";
@@ -58,6 +59,7 @@ function replayProgress(replay: MessageReplay, requestedItem: ReplayItem | null)
 function SingleReplayControl({ messageId, replay, onReplayed }: SingleReplayControlProps) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const [quotaError, setQuotaError] = useState<ReplayQuotaError | null>(null);
   const [run, setRun] = useState<ReplayRun | null>(null);
 
   const requestedItem = run?.items?.[0] ?? null;
@@ -66,16 +68,46 @@ function SingleReplayControl({ messageId, replay, onReplayed }: SingleReplayCont
   const blockedMessage = replayBlockedMessage(replay.blocked_reason);
   const alreadySucceeded = replay.blocked_reason === "message_not_failed";
   const endpointPaused = replay.blocked_reason === "endpoint_paused";
+  const quotaMessage = quotaError ? singleReplayQuotaMessage(quotaError) : null;
+
+  const onReplayedRef = useRef(onReplayed);
+
+  useEffect(() => {
+    onReplayedRef.current = onReplayed;
+  }, [onReplayed]);
+
+  const activeReplayStatus = replay.active ? replay.last_outcome?.status ?? "queued" : null;
+  const shouldPoll = activeReplayStatus !== null && isReplayInProgress(activeReplayStatus);
+  const pollInterval =
+    activeReplayStatus === "held" ? REPLAY_HELD_POLL_INTERVAL_MS : REPLAY_POLL_INTERVAL_MS;
+
+  useEffect(() => {
+    if (!shouldPoll) return;
+
+    const interval = window.setInterval(() => {
+      onReplayedRef.current();
+    }, pollInterval);
+
+    return () => window.clearInterval(interval);
+  }, [shouldPoll, pollInterval]);
 
   async function handleReplay() {
     setPending(true);
     setError("");
+    setQuotaError(null);
 
     const result = await replayMessage(messageId);
 
     setPending(false);
 
     if (!result.ok) {
+      const nextQuotaError = readReplayQuotaError(result);
+
+      if (nextQuotaError) {
+        setQuotaError(nextQuotaError);
+        return;
+      }
+
       setError(replayRequestErrorMessage(result.error));
       return;
     }
@@ -136,8 +168,19 @@ function SingleReplayControl({ messageId, replay, onReplayed }: SingleReplayCont
         </div>
       )}
 
+      {quotaMessage && (
+        <div role="alert" className="mt-3">
+          <p className="text-xs font-semibold text-[#B42318]">{quotaMessage.title}</p>
+
+          {quotaMessage.context && (
+            <p className="mt-1 text-xs font-medium text-[#8A9990]">{quotaMessage.context}</p>
+          )}
+        </div>
+      )}
+
       {error && (
         <p
+          role="alert"
           className={`mt-3 text-xs font-semibold ${
             error === REPLAY_ENDPOINT_PAUSED_MESSAGE ? "text-[#8A5D14]" : "text-[#B42318]"
           }`}

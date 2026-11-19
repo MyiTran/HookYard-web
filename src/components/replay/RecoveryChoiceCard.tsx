@@ -6,7 +6,6 @@ type RecoveryChoiceCardProps = {
   panelId: string;
   title: string;
   description: string;
-  availability: string;
   badge?: ReactNode;
   open: boolean;
   mounted?: boolean;
@@ -21,7 +20,6 @@ function RecoveryChoiceCard({
   panelId,
   title,
   description,
-  availability,
   badge,
   open,
   mounted = open,
@@ -41,10 +39,6 @@ function RecoveryChoiceCard({
 
         <span className={`mt-1 block text-sm font-medium ${locked ? "text-[#8A9990]" : "text-[#53665A]"}`}>
           {description}
-        </span>
-
-        <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
-          {availability}
         </span>
       </span>
 
@@ -86,7 +80,7 @@ function RecoveryChoiceCard({
 
       {locked && lockedMessage && (
         <div className="px-5 pb-5">
-          <p className="rounded-xl border border-[#E8D5B5] bg-[#FBF7EC] px-4 py-3 text-xs font-semibold text-[#8A5D14]">
+          <p className="rounded-xl border border-[#D8E3DB] bg-[#F7FAF8] px-4 py-3 text-xs font-medium text-[#53665A]">
             {lockedMessage}
           </p>
 

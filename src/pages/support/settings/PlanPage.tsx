@@ -1,14 +1,15 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { Link, useNavigate, useOutletContext } from "react-router-dom";
+import { useState, type ReactNode } from "react";
+import { Link, Navigate, useOutletContext } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
 import AccountPlanSummaryCard from "../../../components/plan/AccountPlanSummaryCard";
 import PlanOptionCard from "../../../components/plan/PlanOptionCard";
 import Button from "../../../components/ui/Button";
 import ConfirmDialog from "../../../components/ui/ConfirmDialog";
 import { useToast } from "../../../components/ui/toastContext";
-import { changeAccountPlan, getAccount } from "../../../lib/accountApi";
+import { useAccountPlan } from "../../../hooks/accountPlanContext";
+import { changeAccountPlan } from "../../../lib/accountApi";
 import { planLabel } from "../../../lib/plan";
-import type { AccountPlan, Plan } from "../../../types/plan";
+import type { Plan } from "../../../types/plan";
 import type { CurrentUser } from "../../../types/user";
 
 type PlanActionProps = {
@@ -33,52 +34,17 @@ function PlanAction({ plan, currentPlan, onSelect }: PlanActionProps) {
 
 function PlanPage() {
   const user = useOutletContext<CurrentUser>();
-  const navigate = useNavigate();
   const { showToast } = useToast();
+  const isAdmin = user.role === "admin";
+  const { account, loading, error: loadError, applyAccount } = useAccountPlan();
 
-  const [account, setAccount] = useState<AccountPlan | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
   const [switchTarget, setSwitchTarget] = useState<Plan | null>(null);
   const [switching, setSwitching] = useState(false);
   const [switchError, setSwitchError] = useState("");
 
-  useEffect(() => {
-    if (user.role !== "admin") return;
-
-    showToast({ type: "error", message: "Customer plan management is available in Admin → Accounts." });
-    navigate("/settings", { replace: true });
-  }, [user.role, navigate, showToast]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      if (user.role === "admin") return;
-
-      setLoading(true);
-      setLoadError("");
-
-      const result = await getAccount();
-
-      if (cancelled) return;
-
-      if (result.ok) {
-        setAccount(result.data);
-      } else {
-        setAccount(null);
-        setLoadError(result.error);
-      }
-
-      setLoading(false);
-    }
-
-    load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user.role]);
+  if (isAdmin) {
+    return <Navigate to="/settings" replace />;
+  }
 
   async function handleConfirmSwitch() {
     if (!switchTarget) return;
@@ -96,13 +62,11 @@ function PlanPage() {
       return;
     }
 
-    setAccount(result.data);
+    applyAccount(result.data);
     showToast({ type: "success", message: `Your account is now on the ${planLabel(result.data.plan)} plan` });
   }
 
   const availablePlans = account?.available_plans ?? null;
-
-  if (user.role === "admin") return null;
 
   let body: ReactNode;
 

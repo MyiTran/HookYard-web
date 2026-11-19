@@ -6,6 +6,7 @@ import FilterSearchInput from "../../../components/filters/FilterSearchInput";
 import FilterSelect from "../../../components/filters/FilterSelect";
 import FilterToolbar from "../../../components/filters/FilterToolbar";
 import AppLayout from "../../../components/layout/AppLayout";
+import Button from "../../../components/ui/Button";
 import Pagination from "../../../components/ui/Pagination";
 import { getAdminSupportAccounts } from "../../../lib/adminApi";
 import { readPageParam, setSearchParam } from "../../../lib/searchParams";
@@ -80,6 +81,7 @@ function AdminAccountsPage() {
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [reloadToken, setReloadToken] = useState(0);
 
   const [searchDraft, setSearchDraft] = useState(searchQuery);
   const [syncedSearch, setSyncedSearch] = useState(searchQuery);
@@ -140,7 +142,7 @@ function AdminAccountsPage() {
     return () => {
       cancelled = true;
     };
-  }, [searchQuery, role, active, plan, sort, page, setSearchParams]);
+  }, [searchQuery, role, active, plan, sort, page, reloadToken, setSearchParams]);
 
   function applyFilters(next: { search: string; role: AccountRoleFilter; active: AccountActiveFilter; plan: AccountPlanFilter; sort: AccountSort }) {
     setError("");
@@ -171,6 +173,11 @@ function AdminAccountsPage() {
     setSearchParams(params);
   }
 
+  function handleRetry() {
+    setError("");
+    setReloadToken((token) => token + 1);
+  }
+
   const isFiltered = searchQuery !== "" || role !== "all" || active !== "all" || plan !== "all" || sort !== "created_desc";
 
   return (
@@ -184,59 +191,62 @@ function AdminAccountsPage() {
       </div>
 
       <section className="mt-8">
+        <FilterToolbar onSubmit={handleSearchSubmit}>
+          <FilterSearchInput
+            id="admin-account-search"
+            value={searchDraft}
+            onChange={setSearchDraft}
+            placeholder="Search name or email"
+            label="Search accounts"
+            className="w-full sm:w-80"
+          />
+
+          <FilterSelect
+            value={role}
+            onChange={(value) => applyFilters({ search: searchQuery, role: value as AccountRoleFilter, active, plan, sort })}
+            options={ROLE_OPTIONS}
+            ariaLabel="Filter by role"
+            className="sm:w-36"
+          />
+
+          <FilterSelect
+            value={active}
+            onChange={(value) => applyFilters({ search: searchQuery, role, active: value as AccountActiveFilter, plan, sort })}
+            options={ACTIVE_OPTIONS}
+            ariaLabel="Filter by confirmation"
+            className="sm:w-40"
+          />
+
+          <FilterSelect
+            value={plan}
+            onChange={(value) => applyFilters({ search: searchQuery, role, active, plan: value as AccountPlanFilter, sort })}
+            options={PLAN_OPTIONS}
+            ariaLabel="Filter by plan"
+            className="sm:w-36"
+          />
+
+          <FilterSelect
+            value={sort}
+            onChange={(value) => applyFilters({ search: searchQuery, role, active, plan, sort: value as AccountSort })}
+            options={SORT_OPTIONS}
+            ariaLabel="Sort accounts"
+            className="sm:w-40"
+          />
+
+          <FilterClearButton onClick={handleReset} />
+        </FilterToolbar>
+
         {loading && accounts.length === 0 && !isFiltered ? (
-          <p className="text-sm font-medium text-[#607267]">Loading accounts...</p>
+          <p className="mt-5 text-sm font-medium text-[#607267]">Loading accounts...</p>
         ) : error ? (
-          <div className="rounded-[18px] border border-[#F1D5D5] bg-[#FBEEEE] px-6 py-8 text-sm font-medium text-[#B42318]">
-            {error}
+          <div role="alert" className="mt-5 rounded-[18px] border border-[#F1D5D5] bg-[#FBEEEE] px-6 py-8">
+            <p className="text-sm font-medium text-[#B42318]">{error}</p>
+            <Button variant="secondary" size="md" className="mt-4" onClick={handleRetry}>
+              Try again
+            </Button>
           </div>
         ) : (
           <>
-            <FilterToolbar onSubmit={handleSearchSubmit}>
-              <FilterSearchInput
-                id="admin-account-search"
-                value={searchDraft}
-                onChange={setSearchDraft}
-                placeholder="Search name or email"
-                label="Search accounts"
-                className="w-full sm:w-80"
-              />
-
-              <FilterSelect
-                value={role}
-                onChange={(value) => applyFilters({ search: searchQuery, role: value as AccountRoleFilter, active, plan, sort })}
-                options={ROLE_OPTIONS}
-                ariaLabel="Filter by role"
-                className="sm:w-36"
-              />
-
-              <FilterSelect
-                value={active}
-                onChange={(value) => applyFilters({ search: searchQuery, role, active: value as AccountActiveFilter, plan, sort })}
-                options={ACTIVE_OPTIONS}
-                ariaLabel="Filter by confirmation"
-                className="sm:w-40"
-              />
-
-              <FilterSelect
-                value={plan}
-                onChange={(value) => applyFilters({ search: searchQuery, role, active, plan: value as AccountPlanFilter, sort })}
-                options={PLAN_OPTIONS}
-                ariaLabel="Filter by plan"
-                className="sm:w-36"
-              />
-
-              <FilterSelect
-                value={sort}
-                onChange={(value) => applyFilters({ search: searchQuery, role, active, plan, sort: value as AccountSort })}
-                options={SORT_OPTIONS}
-                ariaLabel="Sort accounts"
-                className="sm:w-40"
-              />
-
-              <FilterClearButton onClick={handleReset} />
-            </FilterToolbar>
-
             {loading ? (
               <p className="mt-5 text-sm font-medium text-[#607267]">Loading accounts...</p>
             ) : accounts.length === 0 ? (

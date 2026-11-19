@@ -7,14 +7,20 @@ import Button from "../ui/Button";
 
 type DiagnosisResultCardProps = {
   diagnosis: EndpointDiagnosis;
-  loading?: boolean;
+  disabled?: boolean;
   onAnalyzeAgain: () => void;
 };
 
-const ANALYZED_EVIDENCE =
-  "Recent redacted response status, headers, body excerpts, duration and transport failures.";
+function analyzedAttemptsCopy(count: number): string {
+  const attempts =
+    count === 1
+      ? "1 recent failed attempt was analyzed"
+      : `${count} recent failed attempts were analyzed`;
 
-function DiagnosisResultCard({ diagnosis, loading = false, onAnalyzeAgain }: DiagnosisResultCardProps) {
+  return `${attempts}. Evidence is redacted and includes bounded response status, headers, body excerpts, duration, and transport failure information.`;
+}
+
+function DiagnosisResultCard({ diagnosis, disabled = false, onAnalyzeAgain }: DiagnosisResultCardProps) {
   const presentation = diagnosisPresentation(diagnosis.label);
   const sourceBadge = diagnosisSourceBadge(diagnosis.source);
   const { Icon, styles } = presentation;
@@ -51,7 +57,9 @@ function DiagnosisResultCard({ diagnosis, loading = false, onAnalyzeAgain }: Dia
           What was analyzed?
         </summary>
 
-        <p className="mt-1.5 text-xs font-medium leading-5 text-[#53665A]">{ANALYZED_EVIDENCE}</p>
+        <p className="mt-1.5 text-xs font-medium leading-5 text-[#53665A]">
+          {analyzedAttemptsCopy(diagnosis.analyzed_attempt_count)}
+        </p>
       </details>
 
       <div className="mt-4">
@@ -59,7 +67,7 @@ function DiagnosisResultCard({ diagnosis, loading = false, onAnalyzeAgain }: Dia
           variant="secondary"
           size="md"
           className="w-full sm:w-auto"
-          disabled={loading}
+          disabled={disabled}
           onClick={onAnalyzeAgain}
         >
           Analyze again

@@ -7,6 +7,7 @@ import FilterSearchInput from "../../../components/filters/FilterSearchInput";
 import FilterSelect from "../../../components/filters/FilterSelect";
 import FilterToolbar from "../../../components/filters/FilterToolbar";
 import AppLayout from "../../../components/layout/AppLayout";
+import Button from "../../../components/ui/Button";
 import Pagination from "../../../components/ui/Pagination";
 import { getAdminEndpoints, getAdminProject } from "../../../lib/adminApi";
 import { readPageParam, setSearchParam } from "../../../lib/searchParams";
@@ -69,6 +70,7 @@ function AdminEndpointsPage() {
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [reloadToken, setReloadToken] = useState(0);
   const [projectName, setProjectName] = useState("");
 
   const [searchDraft, setSearchDraft] = useState(searchQuery);
@@ -153,7 +155,7 @@ function AdminEndpointsPage() {
     return () => {
       cancelled = true;
     };
-  }, [searchQuery, projectId, status, circuit, sort, page, setSearchParams]);
+  }, [searchQuery, projectId, status, circuit, sort, page, reloadToken, setSearchParams]);
 
   function applyFilters(next: { search: string; status: EndpointStatusFilter; circuit: CircuitFilter; sort: EndpointSort }) {
     setError("");
@@ -190,6 +192,11 @@ function AdminEndpointsPage() {
     setSearchParams(params);
   }
 
+  function handleRetry() {
+    setError("");
+    setReloadToken((token) => token + 1);
+  }
+
   const isFiltered = searchQuery !== "" || projectId !== "" || status !== "all" || circuit !== "all" || sort !== "created_desc";
 
   return (
@@ -201,60 +208,63 @@ function AdminEndpointsPage() {
       </div>
 
       <section className="mt-8">
+        {projectId && (
+          <div className="mb-3">
+            <AdminContextChip
+              label={projectName ? `Project: ${projectName}` : `Project: ${projectId}`}
+              onClear={handleClearProjectContext}
+            />
+          </div>
+        )}
+
+        <FilterToolbar onSubmit={handleSearchSubmit}>
+          <FilterSearchInput
+            id="admin-endpoint-search"
+            value={searchDraft}
+            onChange={setSearchDraft}
+            placeholder="Search name or URL"
+            label="Search endpoints"
+            className="w-full sm:w-80"
+          />
+
+          <FilterSelect
+            value={status}
+            onChange={(value) => applyFilters({ search: searchQuery, status: value as EndpointStatusFilter, circuit, sort })}
+            options={STATUS_OPTIONS}
+            ariaLabel="Filter by status"
+            className="sm:w-36"
+          />
+
+          <FilterSelect
+            value={circuit}
+            onChange={(value) => applyFilters({ search: searchQuery, status, circuit: value as CircuitFilter, sort })}
+            options={CIRCUIT_OPTIONS}
+            ariaLabel="Filter by circuit state"
+            className="sm:w-44"
+          />
+
+          <FilterSelect
+            value={sort}
+            onChange={(value) => applyFilters({ search: searchQuery, status, circuit, sort: value as EndpointSort })}
+            options={SORT_OPTIONS}
+            ariaLabel="Sort endpoints"
+            className="sm:w-40"
+          />
+
+          <FilterClearButton onClick={handleReset} />
+        </FilterToolbar>
+
         {loading && endpoints.length === 0 && !isFiltered ? (
-          <p className="text-sm font-medium text-[#607267]">Loading endpoints...</p>
+          <p className="mt-5 text-sm font-medium text-[#607267]">Loading endpoints...</p>
         ) : error ? (
-          <div className="rounded-[18px] border border-[#F1D5D5] bg-[#FBEEEE] px-6 py-8 text-sm font-medium text-[#B42318]">
-            {error}
+          <div role="alert" className="mt-5 rounded-[18px] border border-[#F1D5D5] bg-[#FBEEEE] px-6 py-8">
+            <p className="text-sm font-medium text-[#B42318]">{error}</p>
+            <Button variant="secondary" size="md" className="mt-4" onClick={handleRetry}>
+              Try again
+            </Button>
           </div>
         ) : (
           <>
-            {projectId && (
-              <div className="mb-3">
-                <AdminContextChip
-                  label={projectName ? `Project: ${projectName}` : `Project: ${projectId}`}
-                  onClear={handleClearProjectContext}
-                />
-              </div>
-            )}
-
-            <FilterToolbar onSubmit={handleSearchSubmit}>
-              <FilterSearchInput
-                id="admin-endpoint-search"
-                value={searchDraft}
-                onChange={setSearchDraft}
-                placeholder="Search name or URL"
-                label="Search endpoints"
-                className="w-full sm:w-80"
-              />
-
-              <FilterSelect
-                value={status}
-                onChange={(value) => applyFilters({ search: searchQuery, status: value as EndpointStatusFilter, circuit, sort })}
-                options={STATUS_OPTIONS}
-                ariaLabel="Filter by status"
-                className="sm:w-36"
-              />
-
-              <FilterSelect
-                value={circuit}
-                onChange={(value) => applyFilters({ search: searchQuery, status, circuit: value as CircuitFilter, sort })}
-                options={CIRCUIT_OPTIONS}
-                ariaLabel="Filter by circuit state"
-                className="sm:w-44"
-              />
-
-              <FilterSelect
-                value={sort}
-                onChange={(value) => applyFilters({ search: searchQuery, status, circuit, sort: value as EndpointSort })}
-                options={SORT_OPTIONS}
-                ariaLabel="Sort endpoints"
-                className="sm:w-40"
-              />
-
-              <FilterClearButton onClick={handleReset} />
-            </FilterToolbar>
-
             {loading ? (
               <p className="mt-5 text-sm font-medium text-[#607267]">Loading endpoints...</p>
             ) : endpoints.length === 0 ? (

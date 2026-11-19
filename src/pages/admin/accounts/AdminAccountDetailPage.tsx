@@ -213,7 +213,14 @@ function AdminAccountDetailPage() {
                   </div>
                 </div>
 
-                <Button variant="secondary" size="md" onClick={() => setPlanModalOpen(true)}>
+                <Button
+                  variant="secondary"
+                  size="md"
+                  onClick={() => {
+                    setPlanSuccess("");
+                    setPlanModalOpen(true);
+                  }}
+                >
                   Change plan
                 </Button>
               </div>

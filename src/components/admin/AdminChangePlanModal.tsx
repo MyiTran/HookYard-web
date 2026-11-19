@@ -18,7 +18,7 @@ function AdminChangePlanModal({ account, pending, error, onSubmit, onClose }: Ad
   const unchanged = selected === account.plan;
 
   return (
-    <Modal title="Change account plan" onClose={onClose}>
+    <Modal title="Change account plan" onClose={onClose} dismissible={!pending}>
       <p className="text-sm leading-6 text-[#53665A]">
         This changes the plan for projects billed to{" "}
         <span className="font-semibold text-[#1F2A24]">{account.name}</span>.

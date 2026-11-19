@@ -1,6 +1,10 @@
 export type ReplayRunMode = "single" | "bulk";
 
-export type ReplayRunStatus = "queued" | "running" | "completed";
+export type ReplayRunStatus = "queued" | "running" | "completed" | "failed";
+
+export type ReplayRunFailureReason =
+  | "monthly_delivery_limit_exceeded"
+  | "bulk_replay_limit_exceeded";
 
 export type ReplayItemStatus = "queued" | "held" | "delivering" | "succeeded" | "failed" | "skipped";
 
@@ -59,6 +63,8 @@ export type ReplayRun = {
   created_at: string;
   updated_at: string;
   status: ReplayRunStatus;
+  failed_at: string | null;
+  failure_reason: ReplayRunFailureReason | null;
   summary: ReplaySummary;
   actor: ReplayActor;
   items?: ReplayItem[];
@@ -100,4 +106,11 @@ export type MessageReplay = {
   blocked_reason: ReplayBlockedReason | null;
   active: boolean;
   last_outcome: ReplayLastOutcome | null;
+};
+
+export type ReplayQuotaError = {
+  eligible: number | null;
+  used: number | null;
+  limit: number | null;
+  period_ends: string | null;
 };

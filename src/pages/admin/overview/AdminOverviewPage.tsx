@@ -171,9 +171,9 @@ function AdminOverviewPage() {
           tone: "amber" as Tone,
         },
         {
-          sentence: "Deliveries failed",
+          sentence: "Failed attempts",
           value: overview.deliveries.failed_attempts,
-          to: "/admin/deliveries?status=failed",
+          to: "/admin/deliveries",
           tone: "red" as Tone,
         },
       ].filter((row) => row.value > 0)
@@ -269,9 +269,13 @@ function AdminOverviewPage() {
                     Delivery success rate
                   </p>
 
-                  <p className={`mt-3 text-5xl font-semibold tracking-tight ${TONE_TEXT[healthTone.tone]}`}>
-                    {formatRate(overview.deliveries.success_rate)}
-                  </p>
+                  {overview.deliveries.total_attempts === 0 ? (
+                    <p className="mt-4 text-base font-semibold text-[#53665A]">No delivery activity</p>
+                  ) : (
+                    <p className={`mt-3 text-5xl font-semibold tracking-tight ${TONE_TEXT[healthTone.tone]}`}>
+                      {formatRate(overview.deliveries.success_rate)}
+                    </p>
+                  )}
 
                   <div className="mt-2 flex items-center gap-2">
                     <span className={`h-2.5 w-2.5 rounded-full ${TONE_DOT[healthTone.tone]}`} />
@@ -291,7 +295,7 @@ function AdminOverviewPage() {
                     valueTone="green"
                   />
                   <RowLink
-                    to="/admin/deliveries?status=failed"
+                    to="/admin/deliveries"
                     label="Failed"
                     value={formatMetric(overview.deliveries.failed_attempts)}
                     valueTone="red"
@@ -335,8 +339,8 @@ function AdminOverviewPage() {
 
                 <div className="mt-3 divide-y divide-[#E4EBE6]">
                   <RowLink
-                    to="/admin/deliveries?status=failed"
-                    label="Failed deliveries"
+                    to="/admin/deliveries"
+                    label="Failed attempts"
                     value={formatMetric(overview.deliveries.failed_attempts)}
                     valueTone="red"
                   />

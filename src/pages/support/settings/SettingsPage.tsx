@@ -9,17 +9,24 @@ import type { CurrentUser } from "../../../types/user";
 
 function SettingsPage() {
   const user = useOutletContext<CurrentUser>();
+  const isAdmin = user.role === "admin";
 
   return (
     <AppLayout user={user} title="Settings">
       <header className="mt-6">
         <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
         <p className="mt-2 max-w-2xl text-sm font-medium text-[#53665A]">
-          {user.role === "admin" ? "Manage your account." : "Manage your account and the plan your owned Projects run on."}
+          {isAdmin ? "Manage your account." : "Manage your account and the plan your owned Projects run on."}
         </p>
+
+        {isAdmin && (
+          <p className="mt-2 max-w-2xl text-sm font-medium text-[#718078]">
+            Plan management is only available for customer accounts.
+          </p>
+        )}
       </header>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+      <div className={`mt-6 grid gap-4 ${isAdmin ? "" : "lg:grid-cols-2"}`}>
         <section className="rounded-[18px] border border-[#D8E3DB] bg-white p-5 shadow-[0_8px_30px_rgba(32,78,53,0.05)]">
           <h2 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Account</h2>
 
@@ -48,7 +55,7 @@ function SettingsPage() {
           </div>
         </section>
 
-        {user.role !== "admin" && (
+        {!isAdmin && (
           <Link
             to="/settings/plan"
             className="group flex min-w-0 items-start justify-between gap-4 rounded-[18px] border border-[#D8E3DB] bg-white p-5 shadow-[0_8px_30px_rgba(32,78,53,0.05)] transition hover:border-[#23613F] hover:shadow-[0_12px_36px_rgba(32,78,53,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#23613F]/30"

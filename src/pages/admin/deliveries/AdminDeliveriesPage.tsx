@@ -7,6 +7,7 @@ import FilterDateRange from "../../../components/filters/FilterDateRange";
 import FilterSelect from "../../../components/filters/FilterSelect";
 import FilterToolbar from "../../../components/filters/FilterToolbar";
 import AppLayout from "../../../components/layout/AppLayout";
+import Button from "../../../components/ui/Button";
 import Pagination from "../../../components/ui/Pagination";
 import { getAdminAccount, getAdminDeliveries, getAdminEndpoint, getAdminProject } from "../../../lib/adminApi";
 import { readDateParam } from "../../../lib/dateRange";
@@ -75,6 +76,7 @@ function AdminDeliveriesPage() {
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [reloadToken, setReloadToken] = useState(0);
 
   const [accountName, setAccountName] = useState("");
   const [projectName, setProjectName] = useState("");
@@ -200,7 +202,7 @@ function AdminDeliveriesPage() {
     return () => {
       cancelled = true;
     };
-  }, [status, failureCategory, accountId, projectId, endpointId, from, to, sort, page, setSearchParams]);
+  }, [status, failureCategory, accountId, projectId, endpointId, from, to, sort, page, reloadToken, setSearchParams]);
 
   function applyFilters(next: {
     status: DeliveryStatusFilter;
@@ -239,6 +241,11 @@ function AdminDeliveriesPage() {
     setSearchParams(params);
   }
 
+  function handleRetry() {
+    setError("");
+    setReloadToken((token) => token + 1);
+  }
+
   const isFiltered =
     status !== "all" ||
     failureCategory !== "all" ||
@@ -258,76 +265,79 @@ function AdminDeliveriesPage() {
       </div>
 
       <section className="mt-8">
+        {(accountId || projectId || endpointId) && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {accountId && (
+              <AdminContextChip
+                label={accountName ? `Account: ${accountName}` : `Account: ${accountId}`}
+                onClear={() => clearContext("account_id")}
+              />
+            )}
+
+            {projectId && (
+              <AdminContextChip
+                label={projectName ? `Project: ${projectName}` : `Project: ${projectId}`}
+                onClear={() => clearContext("project_id")}
+              />
+            )}
+
+            {endpointId && (
+              <AdminContextChip
+                label={endpointName ? `Endpoint: ${endpointName}` : `Endpoint: ${endpointId}`}
+                onClear={() => clearContext("endpoint_id")}
+              />
+            )}
+          </div>
+        )}
+
+        <FilterToolbar onSubmit={() => applyFilters({ status, failureCategory, from, to, sort })}>
+          <FilterSelect
+            value={status}
+            onChange={(value) => applyFilters({ status: value as DeliveryStatusFilter, failureCategory, from, to, sort })}
+            options={STATUS_OPTIONS}
+            ariaLabel="Filter by status"
+            className="sm:w-36"
+          />
+
+          <FilterSelect
+            value={failureCategory}
+            onChange={(value) => applyFilters({ status, failureCategory: value as FailureCategoryFilter, from, to, sort })}
+            options={FAILURE_OPTIONS}
+            ariaLabel="Filter by failure category"
+            className="sm:w-44"
+          />
+
+          <FilterDateRange
+            idPrefix="admin-delivery"
+            layout="row"
+            from={from}
+            to={to}
+            onFromChange={(value) => applyFilters({ status, failureCategory, from: value, to, sort })}
+            onToChange={(value) => applyFilters({ status, failureCategory, from, to: value, sort })}
+          />
+
+          <FilterSelect
+            value={sort}
+            onChange={(value) => applyFilters({ status, failureCategory, from, to, sort: value as DeliverySort })}
+            options={SORT_OPTIONS}
+            ariaLabel="Sort deliveries"
+            className="sm:w-40"
+          />
+
+          <FilterClearButton onClick={handleReset} />
+        </FilterToolbar>
+
         {loading && deliveries.length === 0 && !isFiltered ? (
-          <p className="text-sm font-medium text-[#607267]">Loading deliveries...</p>
+          <p className="mt-5 text-sm font-medium text-[#607267]">Loading deliveries...</p>
         ) : error ? (
-          <div className="rounded-[18px] border border-[#F1D5D5] bg-[#FBEEEE] px-6 py-8 text-sm font-medium text-[#B42318]">
-            {error}
+          <div role="alert" className="mt-5 rounded-[18px] border border-[#F1D5D5] bg-[#FBEEEE] px-6 py-8">
+            <p className="text-sm font-medium text-[#B42318]">{error}</p>
+            <Button variant="secondary" size="md" className="mt-4" onClick={handleRetry}>
+              Try again
+            </Button>
           </div>
         ) : (
           <>
-            {(accountId || projectId || endpointId) && (
-              <div className="mb-3 flex flex-wrap gap-2">
-                {accountId && (
-                  <AdminContextChip
-                    label={accountName ? `Account: ${accountName}` : `Account: ${accountId}`}
-                    onClear={() => clearContext("account_id")}
-                  />
-                )}
-
-                {projectId && (
-                  <AdminContextChip
-                    label={projectName ? `Project: ${projectName}` : `Project: ${projectId}`}
-                    onClear={() => clearContext("project_id")}
-                  />
-                )}
-
-                {endpointId && (
-                  <AdminContextChip
-                    label={endpointName ? `Endpoint: ${endpointName}` : `Endpoint: ${endpointId}`}
-                    onClear={() => clearContext("endpoint_id")}
-                  />
-                )}
-              </div>
-            )}
-
-            <FilterToolbar onSubmit={() => applyFilters({ status, failureCategory, from, to, sort })}>
-              <FilterSelect
-                value={status}
-                onChange={(value) => applyFilters({ status: value as DeliveryStatusFilter, failureCategory, from, to, sort })}
-                options={STATUS_OPTIONS}
-                ariaLabel="Filter by status"
-                className="sm:w-36"
-              />
-
-              <FilterSelect
-                value={failureCategory}
-                onChange={(value) => applyFilters({ status, failureCategory: value as FailureCategoryFilter, from, to, sort })}
-                options={FAILURE_OPTIONS}
-                ariaLabel="Filter by failure category"
-                className="sm:w-44"
-              />
-
-              <FilterDateRange
-                idPrefix="admin-delivery"
-                layout="row"
-                from={from}
-                to={to}
-                onFromChange={(value) => applyFilters({ status, failureCategory, from: value, to, sort })}
-                onToChange={(value) => applyFilters({ status, failureCategory, from, to: value, sort })}
-              />
-
-              <FilterSelect
-                value={sort}
-                onChange={(value) => applyFilters({ status, failureCategory, from, to, sort: value as DeliverySort })}
-                options={SORT_OPTIONS}
-                ariaLabel="Sort deliveries"
-                className="sm:w-40"
-              />
-
-              <FilterClearButton onClick={handleReset} />
-            </FilterToolbar>
-
             {loading ? (
               <p className="mt-5 text-sm font-medium text-[#607267]">Loading deliveries...</p>
             ) : deliveries.length === 0 ? (

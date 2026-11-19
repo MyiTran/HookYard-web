@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import FilterDateRange from "../filters/FilterDateRange";
 import FilterSelect from "../filters/FilterSelect";
 import { dateRangeLabel } from "../../lib/dateFormat";
+import { readDateParam } from "../../lib/dateRange";
 import { readDeliverySearchKind } from "../../lib/deliveryApi";
 import { getEndpoints } from "../../lib/endpointApi";
 import { getProjects } from "../../lib/projectApi";
@@ -18,25 +20,31 @@ import {
   FALLBACK_MAX_ITEMS_PER_RUN,
   readReplayLimitFailure,
   replayItemLimit,
-  replayLimitBatchHint,
   replayLimitWarning,
   type ReplayLimit,
 } from "../../lib/replayLimit";
+import { bulkReplayQuotaMessage, readReplayQuotaError } from "../../lib/replayQuota";
 import type { DeliveryOrder } from "../../types/delivery";
 import type { Endpoint } from "../../types/endpoint";
 import type { Project } from "../../types/project";
-import type { ReplayPreview, ReplayRun } from "../../types/replay";
+import type { ReplayPreview, ReplayQuotaError, ReplayRun } from "../../types/replay";
 import Button from "../ui/Button";
+import ContextualHelp from "../ui/ContextualHelp";
 import BulkRecoveryConfirmModal, { type RecoveryScopeItem } from "./BulkRecoveryConfirmModal";
 import ReplayPreviewCard from "./ReplayPreviewCard";
 import ReplayRunPanel from "./ReplayRunPanel";
 
 const DEFAULT_ORDER: DeliveryOrder = "created_desc";
+const ORDER_VALUES: DeliveryOrder[] = ["created_desc", "created_asc"];
 
 const ORDER_OPTIONS: { value: DeliveryOrder; label: string }[] = [
   { value: "created_desc", label: "Newest first" },
   { value: "created_asc", label: "Oldest first" },
 ];
+
+function readOrder(value: string | null): DeliveryOrder {
+  return ORDER_VALUES.includes(value as DeliveryOrder) ? (value as DeliveryOrder) : DEFAULT_ORDER;
+}
 
 const TEXT_INPUT_CLASS =
   "h-11 w-full min-w-0 rounded-xl border border-[#C9DACE] bg-white px-3.5 text-sm outline-none transition placeholder:text-[#A4B0A8] focus:border-[#23613F] focus:ring-2 focus:ring-[#23613F]/10";
@@ -58,19 +66,28 @@ function GroupRecovery() {
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [projectsError, setProjectsError] = useState("");
 
-  const [projectId, setProjectId] = useState("");
-  const [endpoints, setEndpoints] = useState<Endpoint[]>([]);
-  const [endpointId, setEndpointId] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [search, setSearch] = useState("");
-  const [eventType, setEventType] = useState("");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [order, setOrder] = useState<DeliveryOrder>(DEFAULT_ORDER);
+  const projectId = searchParams.get("project_id") ?? "";
+  const endpointId = searchParams.get("endpoint_id") ?? "";
+  const search = searchParams.get("q") ?? "";
+  const eventType = searchParams.get("event_type") ?? "";
+  const from = readDateParam(searchParams.get("from"));
+  const to = readDateParam(searchParams.get("to"));
+  const order = readOrder(searchParams.get("order"));
+
+  const [endpoints, setEndpoints] = useState<Endpoint[]>([]);
+  const [endpointsProjectId, setEndpointsProjectId] = useState(projectId);
+
+  if (projectId !== endpointsProjectId) {
+    setEndpointsProjectId(projectId);
+    setEndpoints([]);
+  }
 
   const [preview, setPreview] = useState<ReplayPreview | null>(null);
   const [previewing, setPreviewing] = useState(false);
   const [previewError, setPreviewError] = useState("");
+  const [quotaError, setQuotaError] = useState<ReplayQuotaError | null>(null);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [starting, setStarting] = useState(false);
@@ -81,6 +98,23 @@ function GroupRecovery() {
   const [pollError, setPollError] = useState("");
   const [pollingPaused, setPollingPaused] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  const filterSignature = `${projectId}|${endpointId}|${search}|${eventType}|${from}|${to}|${order}`;
+  const [clearedFilterSignature, setClearedFilterSignature] = useState(filterSignature);
+
+  if (filterSignature !== clearedFilterSignature) {
+    setClearedFilterSignature(filterSignature);
+    setPreview(null);
+    setPreviewError("");
+    setQuotaError(null);
+    setStartError("");
+    setLimitFailure(null);
+    setConfirmOpen(false);
+    setRun(null);
+    setPollError("");
+    setPollingPaused(false);
+    setRefreshing(false);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -108,10 +142,12 @@ function GroupRecovery() {
   }, []);
 
   useEffect(() => {
+    if (!projectId) return;
+
     let cancelled = false;
 
     async function load() {
-      const result = await getEndpoints({ projectId: projectId || undefined, order: "name_asc", perPage: 100 });
+      const result = await getEndpoints({ projectId, order: "name_asc", perPage: 100 });
 
       if (cancelled || !result.ok) return;
 
@@ -131,7 +167,7 @@ function GroupRecovery() {
   const waitingForRecovery = run ? isReplayRunWaitingForRecovery(run) : false;
 
   useEffect(() => {
-    if (!runId || runStatus === "completed" || pollingPaused) return;
+    if (!runId || runStatus === "completed" || runStatus === "failed" || pollingPaused) return;
 
     let cancelled = false;
 
@@ -193,6 +229,7 @@ function GroupRecovery() {
   const endpointRecovering = !endpointPaused && selectedEndpoint?.circuit?.state === "circuit_open";
   const previewLimit = preview ? replayItemLimit(preview) : FALLBACK_MAX_ITEMS_PER_RUN;
   const limitWarning = limitFailure ?? (preview ? replayLimitWarning(preview) : null);
+  const quotaMessage = quotaError ? bulkReplayQuotaMessage(quotaError, preview?.eligible_count ?? null) : null;
 
   function recoveryScope(): RecoveryScopeItem[] {
     const items: RecoveryScopeItem[] = [];
@@ -228,14 +265,27 @@ function GroupRecovery() {
   function resetPreview() {
     setPreview(null);
     setPreviewError("");
+    setQuotaError(null);
     setStartError("");
     setLimitFailure(null);
     setConfirmOpen(false);
   }
 
+  function patchSearchParams(patch: Record<string, string>) {
+    setSearchParams((previous) => {
+      const params = new URLSearchParams(previous);
+
+      for (const [key, value] of Object.entries(patch)) {
+        if (value) params.set(key, value);
+        else params.delete(key);
+      }
+
+      return params;
+    });
+  }
+
   function handleProjectChange(value: string) {
-    setProjectId(value);
-    setEndpointId("");
+    patchSearchParams({ project_id: value, endpoint_id: "" });
     setEndpoints([]);
     setRun(null);
     setPollError("");
@@ -244,42 +294,49 @@ function GroupRecovery() {
   }
 
   function handleEndpointChange(value: string) {
-    setEndpointId(value);
+    patchSearchParams({ endpoint_id: value });
     resetPreview();
   }
 
   function handleSearchChange(value: string) {
-    setSearch(value);
+    patchSearchParams({ q: value });
     resetPreview();
   }
 
   function handleEventTypeChange(value: string) {
-    setEventType(value);
+    patchSearchParams({ event_type: value });
     resetPreview();
   }
 
   function handleFromChange(value: string) {
-    setFrom(value);
+    patchSearchParams({ from: value });
     resetPreview();
   }
 
   function handleToChange(value: string) {
-    setTo(value);
+    patchSearchParams({ to: value });
     resetPreview();
   }
 
   function handleOrderChange(value: string) {
-    setOrder(value as DeliveryOrder);
+    patchSearchParams({ order: value === DEFAULT_ORDER ? "" : value });
     resetPreview();
   }
 
   function handleReset() {
-    setSearch("");
-    setEventType("");
-    setFrom("");
-    setTo("");
-    setOrder(DEFAULT_ORDER);
-    setEndpointId("");
+    patchSearchParams({
+      project_id: "",
+      endpoint_id: "",
+      q: "",
+      event_type: "",
+      from: "",
+      to: "",
+      order: "",
+    });
+    setEndpoints([]);
+    setRun(null);
+    setPollError("");
+    setPollingPaused(false);
     resetPreview();
   }
 
@@ -288,12 +345,23 @@ function GroupRecovery() {
 
     setPreviewing(true);
     setPreviewError("");
+    setQuotaError(null);
+    setStartError("");
+    setLimitFailure(null);
 
     const result = await previewReplay(projectId, replayFilters());
 
     setPreviewing(false);
 
     if (!result.ok) {
+      const nextQuotaError = readReplayQuotaError(result);
+
+      if (nextQuotaError) {
+        setPreview(null);
+        setQuotaError(nextQuotaError);
+        return;
+      }
+
       setPreview(null);
       setPreviewError(result.error);
       return;
@@ -307,6 +375,8 @@ function GroupRecovery() {
 
     setStarting(true);
     setStartError("");
+    setQuotaError(null);
+    setLimitFailure(null);
 
     const result = await createBulkReplay(projectId, replayFilters());
 
@@ -314,6 +384,13 @@ function GroupRecovery() {
     setConfirmOpen(false);
 
     if (!result.ok) {
+      const nextQuotaError = readReplayQuotaError(result);
+
+      if (nextQuotaError) {
+        setQuotaError(nextQuotaError);
+        return;
+      }
+
       const limit = readReplayLimitFailure(result.error, result.data, {
         eligible: preview?.eligible_count ?? 0,
         limit: previewLimit,
@@ -333,6 +410,7 @@ function GroupRecovery() {
     setRun(result.data);
     setPollError("");
     setPollingPaused(false);
+    setRefreshing(false);
   }
 
   const projectOptions = [
@@ -345,16 +423,28 @@ function GroupRecovery() {
     ...endpoints.map((endpoint) => ({ value: endpoint.id, label: endpoint.name })),
   ];
 
-  const hasFilters = search !== "" || endpointId !== "" || eventType !== "" || from !== "" || to !== "";
+  const hasFilters =
+    projectId !== "" ||
+    endpointId !== "" ||
+    search !== "" ||
+    eventType !== "" ||
+    from !== "" ||
+    to !== "" ||
+    order !== DEFAULT_ORDER;
 
   return (
     <div>
-      <p className="text-xs font-medium text-[#53665A]">
-        Choose criteria, preview the matching deliveries, then confirm the recovery.
-      </p>
-      <p className="mt-1 text-xs font-medium text-[#8A9990]">
-        Only terminally failed deliveries with an active endpoint are included automatically.
-      </p>
+      <p className="text-xs font-medium text-[#53665A]">Filter deliveries, preview the matches, then confirm.</p>
+
+      <div className="mt-1 flex items-center gap-1.5">
+        <p className="text-xs font-medium text-[#8A9990]">Eligible failed deliveries only.</p>
+
+        <ContextualHelp label="Eligibility details" title="Eligible deliveries">
+          <p className="text-sm font-medium leading-relaxed text-[#53665A]">
+            Paused, archived, disabled, held, and already-recovering deliveries are excluded.
+          </p>
+        </ContextualHelp>
+      </div>
 
       <form
         className="mt-4"
@@ -440,7 +530,7 @@ function GroupRecovery() {
             <div className="mt-3 flex flex-wrap items-end gap-2">
               <div className="w-full min-w-0 sm:flex-1">
                 <label htmlFor="groupRecoverySearch" className={FIELD_LABEL}>
-                  Message ID, request ID, or search
+                  Search
                 </label>
 
                 <input
@@ -448,7 +538,8 @@ function GroupRecovery() {
                   type="search"
                   value={search}
                   onChange={(event) => handleSearchChange(event.target.value)}
-                  placeholder="Search Message ID, Request ID, or delivery text"
+                  placeholder="Message ID, request ID, or text"
+                  aria-label="Search Message ID, request ID, or delivery text"
                   className={`${TEXT_INPUT_CLASS} [&::-webkit-search-cancel-button]:appearance-none`}
                 />
               </div>
@@ -462,21 +553,37 @@ function GroupRecovery() {
                 onToChange={handleToChange}
               />
 
-              <Button type="submit" variant="primary" size="lg" loading={previewing} disabled={!projectId}>
-                {previewing ? "Previewing..." : "Preview recovery"}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button type="submit" variant="primary" size="lg" loading={previewing} disabled={!projectId} aria-label="Preview recovery">
+                  {previewing ? "Previewing..." : "Preview"}
+                </Button>
 
-              <Button variant="secondary" size="lg" onClick={handleReset} disabled={!hasFilters}>
-                Reset filters
+                <ContextualHelp label="Bulk replay capacity" title="Recovery capacity" widthRem={28}>
+                  <p className="text-sm font-medium leading-relaxed text-[#53665A]">
+                    A single recovery can include up to 20,000 deliveries. For large recoveries, use a smaller date
+                    range and run them in batches.
+                  </p>
+                </ContextualHelp>
+              </div>
+
+              <Button variant="secondary" size="lg" onClick={handleReset} disabled={!hasFilters} aria-label="Reset filters">
+                Clear
               </Button>
             </div>
 
-            <p className="mt-2 text-[11px] font-medium leading-relaxed text-[#8A9990]">
-              {replayLimitBatchHint(previewLimit)}
-            </p>
           </>
         )}
       </form>
+
+      {quotaMessage && (
+        <div role="alert" className="mt-4 rounded-[18px] border border-[#F1D5D5] bg-[#FBEEEE] px-6 py-5">
+          <p className="text-sm font-medium text-[#B42318]">{quotaMessage.title}</p>
+
+          {quotaMessage.context && (
+            <p className="mt-1 text-xs font-medium text-[#8A9990]">{quotaMessage.context}</p>
+          )}
+        </div>
+      )}
 
       {previewError && (
         <div className="mt-4 rounded-[18px] border border-[#F1D5D5] bg-[#FBEEEE] px-6 py-5">
@@ -497,6 +604,7 @@ function GroupRecovery() {
             planLocked={planLocked}
             starting={starting}
             limitWarning={limitWarning}
+            quotaBlocked={quotaError !== null}
             onStart={() => setConfirmOpen(true)}
           />
         </div>

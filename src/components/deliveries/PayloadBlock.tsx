@@ -6,6 +6,7 @@ type PayloadBlockProps = {
   label: string;
   value: unknown;
   isHeaders?: boolean;
+  emptyLabel?: string;
 };
 
 function prettyJson(value: unknown): string {
@@ -28,8 +29,18 @@ function formatBody(value: string): string {
   }
 }
 
+const SENSITIVE_HEADER_PATTERN = /authorization|cookie|signature|secret|token|api[-_]?key/i;
+const INTERNAL_HEADER_NAMES = new Set(["server-timing"]);
+
+function isSensitiveHeader(name: string): boolean {
+  const normalized = name.toLowerCase();
+
+  return INTERNAL_HEADER_NAMES.has(normalized) || SENSITIVE_HEADER_PATTERN.test(normalized);
+}
+
 function formatHeaders(headers: Record<string, string>): string {
   return Object.entries(headers)
+    .filter(([name]) => !isSensitiveHeader(name))
     .map(([name, value]) => `${name}: ${value}`)
     .join("\n");
 }
@@ -46,7 +57,7 @@ function formatValue(value: unknown, isHeaders: boolean): string {
   return prettyJson(value);
 }
 
-function PayloadBlock({ label, value, isHeaders = false }: PayloadBlockProps) {
+function PayloadBlock({ label, value, isHeaders = false, emptyLabel = "Not captured" }: PayloadBlockProps) {
   const [copied, setCopied] = useState(false);
   const text = formatValue(value, isHeaders);
 
@@ -83,7 +94,7 @@ function PayloadBlock({ label, value, isHeaders = false }: PayloadBlockProps) {
         </pre>
       ) : (
         <p className="mt-2 rounded-xl border border-dashed border-[#D8E3DB] px-4 py-3 text-xs font-medium text-[#8A9990]">
-          Not captured
+          {emptyLabel}
         </p>
       )}
     </div>
