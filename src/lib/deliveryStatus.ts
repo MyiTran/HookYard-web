@@ -1,4 +1,5 @@
 import type { DeliveryHold, DeliveryState, MessageStatus } from "../types/delivery";
+import type { MessageReplay } from "../types/replay";
 import { formatDateTime } from "./dateFormat";
 
 type DeliveryLifecycleState = {
@@ -9,6 +10,12 @@ type DeliveryLifecycleState = {
   retryable?: boolean;
   delivery_state?: DeliveryState;
   hold?: DeliveryHold | null;
+  replay?: MessageReplay | null;
+};
+
+type ReplayDeliveryState = {
+  status: MessageStatus;
+  replay?: MessageReplay | null;
 };
 
 const LEASE_EXPIRED_ERROR_TYPE = "DeliveryLeaseExpired";
@@ -59,6 +66,12 @@ export function heldDeliveryGuidance(attemptCount: number, maxAttempts: number |
   return `HookYard paused further delivery attempts after the endpoint circuit opened. This delivery has already used ${attemptCount} ${attemptCount === 1 ? "attempt" : "attempts"}.`;
 }
 
+export function isDeliveredByReplay(message: ReplayDeliveryState): boolean {
+  if (message.status !== "succeeded") return false;
+
+  return message.replay?.last_outcome?.status === "succeeded";
+}
+
 export function deliveryLifecycleLabel(message: DeliveryLifecycleState): string {
   if (isHeldDelivery(message) && message.hold) return heldDeliveryLabel(message.hold);
 
@@ -75,7 +88,7 @@ export function deliveryLifecycleLabel(message: DeliveryLifecycleState): string 
   }
 
   if (message.status === "delivering") return "Delivering now";
-  if (message.status === "succeeded") return "Delivered";
+  if (message.status === "succeeded") return isDeliveredByReplay(message) ? "Delivered by replay" : "Delivered";
 
   const attemptsUsed = formatAttemptsUsed(message.attempt_count, message.max_attempts);
   const attemptsLabel = hasMaxAttempts(message.max_attempts) ? "attempts" : attemptWord(message.attempt_count);

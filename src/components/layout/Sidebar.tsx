@@ -43,8 +43,7 @@ function Sidebar({ user, onNavigate, className = "" }: SidebarProps) {
         { name: "Projects", path: "/projects" },
         { name: "Endpoints", path: "/endpoints" },
         { name: "Deliveries", path: "/deliveries" },
-        { name: "Replay", path: "/replay" },
-        { name: "Diagnose", path: "/diagnose" },
+        { name: "Recover deliveries", path: "/replay" },
       ];
 
   async function logout() {

@@ -4,6 +4,7 @@ import { attemptFailureHeadline } from "../../lib/deliveryStatus";
 import { formatDuration } from "../../lib/durationFormat";
 import type { DeliveryAttempt } from "../../types/delivery";
 import ChevronDownIcon from "../icons/ChevronDownIcon";
+import Badge from "../ui/Badge";
 import Button from "../ui/Button";
 import CopyButton from "../ui/CopyButton";
 import DeliveryStatusBadge from "./DeliveryStatusBadge";
@@ -83,6 +84,7 @@ function AttemptCard({ attempt }: AttemptCardProps) {
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Attempt #{attempt.attempt_number}</h3>
               <DeliveryStatusBadge status={attempt.status} />
+              {attempt.attempt_kind === "replay" && <Badge tone="purple">Replay</Badge>}
             </div>
 
             <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium text-[#8A9990]">

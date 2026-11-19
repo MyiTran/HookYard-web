@@ -1,4 +1,6 @@
-export function formatCount(value: number): string {
+export function formatCount(value: number | null | undefined): string {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+
   return value.toLocaleString("en-US");
 }
 

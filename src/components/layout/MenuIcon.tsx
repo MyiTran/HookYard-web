@@ -29,7 +29,7 @@ function MenuIcon({ name }: MenuIconProps) {
     return <ActivityIcon />;
   }
 
-  if (name === "Replay") {
+  if (name === "Recover deliveries") {
     return <RefreshIcon />;
   }
 

@@ -1,3 +1,5 @@
+import type { MessageReplay } from "./replay";
+
 export type MessageStatus = "pending" | "delivering" | "succeeded" | "failed";
 
 export type DeliveryState =
@@ -16,6 +18,8 @@ export type DeliveryHold = {
 };
 
 export type AttemptStatus = "succeeded" | "failed";
+
+export type AttemptKind = "automatic" | "replay";
 
 export type DeliveryMessageSummary = {
   id: string;
@@ -37,6 +41,7 @@ export type DeliveryMessageSummary = {
   last_duration_ms: number | null;
   last_error_type: string | null;
   failure_category?: string | null;
+  replay: MessageReplay;
 };
 
 export type DeliveryProjectRef = {
@@ -112,6 +117,8 @@ export type DeliveryAttempt = {
   status: AttemptStatus;
   bodies_purged_at: string | null;
   failure_category?: string | null;
+  attempt_kind: AttemptKind;
+  replay_item_id: string | null;
 };
 
 export type DeliveryMessageDetail = {
@@ -128,6 +135,7 @@ export type DeliveryMessageDetail = {
   delivery_state?: DeliveryState;
   hold?: DeliveryHold | null;
   failure_category?: string | null;
+  replay: MessageReplay;
   event: DeliveryEvent;
   endpoint: DeliveryEndpointRef;
   attempts: DeliveryAttempt[];
