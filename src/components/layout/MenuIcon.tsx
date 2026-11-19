@@ -13,7 +13,7 @@ function MenuIcon({ name }: MenuIconProps) {
     return <GridIcon />;
   }
 
-  if (name === "Support accounts") {
+  if (name === "Accounts") {
     return <UsersIcon />;
   }
 
