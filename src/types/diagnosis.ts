@@ -15,5 +15,6 @@ export type EndpointDiagnosis = {
   label: DiagnosisLabel;
   suggested_action: string;
   source: DiagnosisSource;
+  analyzed_attempt_count: number;
   created_at: string;
 };
