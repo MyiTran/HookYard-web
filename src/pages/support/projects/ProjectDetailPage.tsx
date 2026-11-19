@@ -312,7 +312,7 @@ function ProjectDetailPage() {
 
             <div>
               <dt className="text-[10px] font-semibold uppercase tracking-[2px] text-[#8A9990]">
-                Project billing plan
+                Billing owner's plan
               </dt>
               <dd className="mt-1 flex flex-wrap items-center gap-2">
                 <PlanBadge plan={project.plan} />

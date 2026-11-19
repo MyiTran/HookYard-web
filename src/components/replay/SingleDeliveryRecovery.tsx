@@ -62,7 +62,7 @@ function SingleDeliveryRecovery() {
   async function refreshSelected() {
     if (!selected) return;
 
-    const result = await getDeliveries({ q: selected.id, page: 1, perPage: MATCH_LIMIT });
+    const result = await getDeliveries({ q: `msg_${selected.id}`, page: 1, perPage: MATCH_LIMIT });
 
     if (!result.ok) {
       setRefreshError(result.error);
@@ -71,7 +71,10 @@ function SingleDeliveryRecovery() {
 
     const updated = result.data.data.find((message) => message.id === selected.id);
 
-    if (!updated) return;
+    if (!updated) {
+      setRefreshError("The selected delivery is no longer available.");
+      return;
+    }
 
     setRefreshError("");
     setMatches((current) =>

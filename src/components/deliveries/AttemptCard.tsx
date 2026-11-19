@@ -3,7 +3,6 @@ import { formatDateTime } from "../../lib/dateFormat";
 import { attemptFailureHeadline } from "../../lib/deliveryStatus";
 import { formatDuration } from "../../lib/durationFormat";
 import type { DeliveryAttempt } from "../../types/delivery";
-import AlertTriangleIcon from "../icons/AlertTriangleIcon";
 import ChevronDownIcon from "../icons/ChevronDownIcon";
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";
@@ -50,56 +49,16 @@ function EvidenceNote({ tone = "muted", children, className = "" }: EvidenceNote
   );
 }
 
-type RetentionNoticeProps = {
-  purgedAt: string;
-  requestRemoved: boolean;
-  responseRemoved: boolean;
-};
-
-type RemovedBodySummaryProps = {
-  children: string;
-};
-
-function retentionScopeText(requestRemoved: boolean, responseRemoved: boolean): string {
-  if (requestRemoved && responseRemoved) return "Request and response bodies were removed";
-
-  return requestRemoved ? "Request body was removed" : "Response body was removed";
-}
-
-function evidenceToggleLabel(expanded: boolean, bothBodiesRemoved: boolean): string {
-  if (bothBodiesRemoved) return expanded ? "Hide headers" : "Show headers";
-
-  return expanded ? "Hide request & response" : "Show request & response";
-}
-
-function RetentionNotice({ purgedAt, requestRemoved, responseRemoved }: RetentionNoticeProps) {
+function RetentionNotice({ purgedAt }: { purgedAt: string }) {
   return (
-    <div
-      role="note"
-      className="mt-4 flex items-start gap-2.5 rounded-xl border border-[#E8D5B5] bg-[#FBF7EC] px-3.5 py-2.5"
-    >
-      <span aria-hidden="true" className="mt-0.5 shrink-0">
-        <AlertTriangleIcon className="h-4 w-4 text-[#9A6B1F]" />
-      </span>
-
-      <div className="min-w-0">
-        <p className="text-xs font-semibold text-[#8A5D14]">
-          {retentionScopeText(requestRemoved, responseRemoved)} by the retention policy on {formatDateTime(purgedAt)}.
-        </p>
-        <p className="mt-0.5 text-xs font-medium text-[#6B5A35]">
-          Delivery outcome, headers and metadata are still available.
-        </p>
-      </div>
+    <div className="rounded-xl border border-[#E8D5B5] bg-[#FBF7EC] px-4 py-3 lg:col-span-2">
+      <p className="text-xs font-semibold text-[#8A5D14]">
+        Request and response bodies were removed by the retention policy on {formatDateTime(purgedAt)}.
+      </p>
+      <p className="mt-1 text-xs font-medium text-[#6B5A35]">
+        Delivery outcome and evidence metadata are still available. Only the stored bodies were removed.
+      </p>
     </div>
-  );
-}
-
-function RemovedBodySummary({ children }: RemovedBodySummaryProps) {
-  return (
-    <li className="flex min-w-0 items-center gap-2 rounded-lg border border-[#E4EBE6] bg-[#F7FAF8] px-2.5 py-1.5 text-[11px] font-semibold text-[#718078]">
-      <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#C0891F]" />
-      <span className="min-w-0">{children}</span>
-    </li>
   );
 }
 
@@ -108,11 +67,6 @@ function AttemptCard({ attempt }: AttemptCardProps) {
   const hasResponse = attempt.response_status !== null;
   const succeeded = attempt.status === "succeeded";
   const bodiesPurgedAt = attempt.bodies_purged_at;
-  const requestBodyRemoved = bodiesPurgedAt !== null && !attempt.request_body;
-  const responseBodyRemoved = bodiesPurgedAt !== null && hasResponse && !attempt.response_body;
-  const anyBodyRemoved = requestBodyRemoved || responseBodyRemoved;
-  const bothBodiesRemoved = requestBodyRemoved && responseBodyRemoved;
-  const detailsId = `attempt-${attempt.id}-http-details`;
 
   return (
     <article className="rounded-[16px] border border-[#D8E3DB] bg-white p-5 shadow-[0_8px_30px_rgba(32,78,53,0.04)]">
@@ -155,6 +109,12 @@ function AttemptCard({ attempt }: AttemptCardProps) {
           <p className="text-sm font-semibold text-[#9A6B1F]">
             {attemptFailureHeadline(attempt.failure_category, attempt.error_type)}
           </p>
+
+          {bodiesPurgedAt && (
+            <p className="mt-1 text-xs font-medium text-[#9A6B1F]">
+              Stored bodies for this attempt were removed by the retention policy.
+            </p>
+          )}
         </div>
       )}
 
@@ -173,58 +133,68 @@ function AttemptCard({ attempt }: AttemptCardProps) {
         <MetaItem label="Signed at">{formatDateTime(attempt.signed_at)}</MetaItem>
 
         <MetaItem label="Request URL" className="sm:col-span-2 lg:col-span-3">
-          <span className="break-all font-mono text-[11px] font-medium text-[#405348]">{attempt.request_url}</span>
+          <span className="break-all font-mono text-[11px] font-medium text-[#405348]">
+            {attempt.request_url ?? "Not available"}
+          </span>
         </MetaItem>
       </dl>
-
-      {bodiesPurgedAt && anyBodyRemoved && (
-        <RetentionNotice
-          purgedAt={bodiesPurgedAt}
-          requestRemoved={requestBodyRemoved}
-          responseRemoved={responseBodyRemoved}
-        />
-      )}
 
       <Button
         variant="secondary"
         size="sm"
         className="mt-4 w-full sm:w-auto"
         aria-expanded={showEvidence}
-        aria-controls={detailsId}
         onClick={() => setShowEvidence((visible) => !visible)}
       >
         <ChevronDownIcon className={`h-4 w-4 transition ${showEvidence ? "rotate-180" : ""}`} />
-        {evidenceToggleLabel(showEvidence, bothBodiesRemoved)}
+        {showEvidence ? "Hide request & response" : "Show request & response"}
       </Button>
 
       {showEvidence && (
-        <div id={detailsId} className="mt-4 border-t border-[#E4EBE6] pt-4">
-          {anyBodyRemoved && (
-            <ul className="mb-4 grid gap-2 sm:grid-cols-2">
-              {requestBodyRemoved && <RemovedBodySummary>Request body removed by retention policy</RemovedBodySummary>}
-              {responseBodyRemoved && <RemovedBodySummary>Response body removed by retention policy</RemovedBodySummary>}
-            </ul>
+        <div className="mt-4 grid gap-4 border-t border-[#E4EBE6] pt-4 lg:grid-cols-2">
+          {bodiesPurgedAt && <RetentionNotice purgedAt={bodiesPurgedAt} />}
+
+          <PayloadBlock
+            label="Request headers"
+            value={attempt.request_headers}
+            isHeaders
+            emptyLabel="No request headers captured."
+          />
+
+          {bodiesPurgedAt ? (
+            <EvidenceNote>Request body was removed by the retention policy.</EvidenceNote>
+          ) : (
+            <PayloadBlock
+              label="Request body"
+              value={attempt.request_body}
+              emptyLabel="No request body was recorded."
+            />
           )}
 
-          <div className="grid items-start gap-4 lg:grid-cols-2">
-            <PayloadBlock label="Request headers" value={attempt.request_headers} isHeaders />
+          {hasResponse ? (
+            <>
+              <PayloadBlock
+                label="Response headers"
+                value={attempt.response_headers}
+                isHeaders
+                emptyLabel="No response headers captured."
+              />
 
-            {!requestBodyRemoved && <PayloadBlock label="Request body" value={attempt.request_body} />}
-
-            {hasResponse && (
-              <>
-                <PayloadBlock label="Response headers" value={attempt.response_headers} isHeaders />
-
-                {!responseBodyRemoved && <PayloadBlock label="Response body" value={attempt.response_body} />}
-              </>
-            )}
-
-            {!hasResponse && (
-              <EvidenceNote tone="warning" className="lg:col-span-2">
-                No HTTP response was received.
-              </EvidenceNote>
-            )}
-          </div>
+              {bodiesPurgedAt ? (
+                <EvidenceNote>Response body was removed by the retention policy.</EvidenceNote>
+              ) : (
+                <PayloadBlock
+                  label="Response body"
+                  value={attempt.response_body}
+                  emptyLabel="No response body was recorded."
+                />
+              )}
+            </>
+          ) : (
+            <EvidenceNote tone="warning" className="lg:col-span-2">
+              No HTTP response was received.
+            </EvidenceNote>
+          )}
         </div>
       )}
     </article>

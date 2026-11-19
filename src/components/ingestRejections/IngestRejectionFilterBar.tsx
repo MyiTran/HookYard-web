@@ -143,6 +143,14 @@ function IngestRejectionFilterBar({
         />
 
         <div className="hidden items-center gap-2 xl:flex">
+          <FilterSelect
+            value={filters.projectId}
+            onChange={(value) => onFiltersChange({ ...filters, projectId: value })}
+            options={projectOptions}
+            ariaLabel="Filter by project"
+            className="w-44"
+          />
+
           <FilterDateRange
             idPrefix="ingestRejection"
             layout="row"

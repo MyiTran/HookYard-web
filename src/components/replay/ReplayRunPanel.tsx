@@ -1,5 +1,5 @@
 import { formatDateTime } from "../../lib/dateFormat";
-import { REPLAY_HELD_GUIDANCE, replayRunStateNote } from "../../lib/replayStatus";
+import { REPLAY_HELD_GUIDANCE, replayRunFailureMessage, replayRunStateNote } from "../../lib/replayStatus";
 import type { ReplayRun } from "../../types/replay";
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";
@@ -15,8 +15,8 @@ type ReplayRunPanelProps = {
   onRefresh: () => void;
 };
 
-function pollingNote(waitingForRecovery: boolean, pollingPaused: boolean, completed: boolean): string | null {
-  if (completed) return null;
+function pollingNote(waitingForRecovery: boolean, pollingPaused: boolean, terminal: boolean): string | null {
+  if (terminal) return null;
 
   if (!waitingForRecovery) return "This panel checks the run every few seconds until it completes.";
 
@@ -34,7 +34,10 @@ function ReplayRunPanel({
   onRefresh,
 }: ReplayRunPanelProps) {
   const completed = run.status === "completed";
-  const note = pollingNote(waitingForRecovery, pollingPaused, completed);
+  const failed = run.status === "failed";
+  const terminal = completed || failed;
+  const failureMessage = failed ? replayRunFailureMessage(run) : null;
+  const note = pollingNote(waitingForRecovery, pollingPaused, terminal);
 
   return (
     <section className="rounded-[18px] border border-[#D8E3DB] bg-white p-5 shadow-[0_8px_30px_rgba(32,78,53,0.05)]">
@@ -66,11 +69,17 @@ function ReplayRunPanel({
         )}
       </div>
 
-      <ReplaySummaryGrid summary={run.summary} />
+      {!failed && <ReplaySummaryGrid summary={run.summary} />}
 
-      <p className="mt-4 text-xs font-medium text-[#53665A]">{replayRunStateNote(run)}</p>
+      {failed && failureMessage && (
+        <p role="alert" className="mt-4 rounded-xl border border-[#F1D5D5] bg-[#FBEEEE] px-4 py-3 text-xs font-semibold text-[#B42318]">
+          {failureMessage}
+        </p>
+      )}
 
-      {run.summary.held > 0 && (
+      {!failed && <p className="mt-4 text-xs font-medium text-[#53665A]">{replayRunStateNote(run)}</p>}
+
+      {!failed && run.summary.held > 0 && (
         <p className="mt-3 rounded-xl border border-[#E8D5B5] bg-[#FBF7EC] px-4 py-3 text-xs font-semibold text-[#8A5D14]">
           {REPLAY_HELD_GUIDANCE}
         </p>
@@ -78,10 +87,12 @@ function ReplayRunPanel({
 
       {note && <p className="mt-2 text-xs font-medium text-[#8A9990]">{note}</p>}
 
-      <p className="mt-3 text-xs font-medium text-[#8A9990]">
-        Bulk runs report aggregate progress only. Open an individual delivery to inspect its replay outcome and attempt
-        history.
-      </p>
+      {!failed && (
+        <p className="mt-3 text-xs font-medium text-[#8A9990]">
+          Bulk runs report aggregate progress only. Open an individual delivery to inspect its replay outcome and attempt
+          history.
+        </p>
+      )}
 
       {pollError && <p className="mt-3 text-xs font-semibold text-[#B42318]">{pollError}</p>}
     </section>

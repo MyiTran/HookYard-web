@@ -13,6 +13,7 @@ type ReplayPreviewCardProps = {
   planLocked: boolean;
   starting: boolean;
   limitWarning: ReplayLimit | null;
+  quotaBlocked: boolean;
   onStart: () => void;
 };
 
@@ -36,9 +37,16 @@ function Count({ label, value, tone = "default" }: CountProps) {
   );
 }
 
-function ReplayPreviewCard({ preview, planLocked, starting, limitWarning, onStart }: ReplayPreviewCardProps) {
+function ReplayPreviewCard({
+  preview,
+  planLocked,
+  starting,
+  limitWarning,
+  quotaBlocked,
+  onStart,
+}: ReplayPreviewCardProps) {
   const limitId = useId();
-  const reviewBlocked = limitWarning !== null;
+  const reviewBlocked = limitWarning !== null || quotaBlocked;
 
   return (
     <section className="rounded-[18px] border border-[#D8E3DB] bg-white p-5 shadow-[0_8px_30px_rgba(32,78,53,0.05)]">
@@ -128,13 +136,15 @@ function ReplayPreviewCard({ preview, planLocked, starting, limitWarning, onStar
           size="md"
           onClick={onStart}
           disabled={reviewBlocked || planLocked || starting}
-          aria-describedby={reviewBlocked ? limitId : undefined}
+          aria-describedby={limitWarning ? limitId : undefined}
           title={
-            reviewBlocked
+            limitWarning
               ? "Narrow the filters to fit within one recovery run"
-              : planLocked
-                ? "Bulk replay requires the Pro plan"
-                : undefined
+              : quotaBlocked
+                ? "This project does not have enough monthly delivery quota for this replay"
+                : planLocked
+                  ? "Bulk replay requires the Pro plan"
+                  : undefined
           }
         >
           {starting ? "Starting replay..." : "Review and replay"}

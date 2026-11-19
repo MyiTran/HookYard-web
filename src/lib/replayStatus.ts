@@ -27,6 +27,7 @@ const RUN_STATUS_LABELS: Record<ReplayRunStatus, string> = {
   queued: "Queued",
   running: "Running",
   completed: "Completed",
+  failed: "Failed",
 };
 
 const HOLD_REASON_LABELS: Record<ReplayHoldReason, string> = {
@@ -103,9 +104,21 @@ export function replaySummaryEntries(summary: ReplaySummary): { key: keyof Repla
 }
 
 export function isReplayRunWaitingForRecovery(run: ReplayRun): boolean {
-  if (run.status === "completed") return false;
+  if (run.status === "completed" || run.status === "failed") return false;
 
   return run.summary.held > 0 && run.summary.queued === 0 && run.summary.delivering === 0;
+}
+
+export function replayRunFailureMessage(run: ReplayRun): string {
+  if (run.failure_reason === "monthly_delivery_limit_exceeded") {
+    return "This project's monthly delivery limit has been reached. No deliveries were replayed.";
+  }
+
+  if (run.failure_reason === "bulk_replay_limit_exceeded") {
+    return "Too many deliveries match these filters. Narrow the filters and try again.";
+  }
+
+  return "The bulk replay could not be completed. Please try again.";
 }
 
 export function replayRunStateNote(run: ReplayRun): string {
@@ -115,6 +128,10 @@ export function replayRunStateNote(run: ReplayRun): string {
 
   if (run.status === "completed") {
     return "The run is complete. Replay attempts appear in each delivery's attempt history.";
+  }
+
+  if (run.status === "failed") {
+    return replayRunFailureMessage(run);
   }
 
   if (run.status === "queued") {
