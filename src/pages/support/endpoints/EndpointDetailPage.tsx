@@ -2,6 +2,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate, useOutletContext, useParams } from "react-router-dom";
 import EndpointCircuitBadge from "../../../components/endpoints/EndpointCircuitBadge";
+import DiagnosisCard from "../../../components/diagnoses/DiagnosisCard";
 import EndpointFormModal, { type EndpointFormValues } from "../../../components/endpoints/EndpointFormModal";
 import DeliveryActivityPanel from "../../../components/endpoints/DeliveryActivityPanel";
 import EndpointPlanLockBadge, { PLAN_LOCK_HELP } from "../../../components/endpoints/EndpointPlanLockBadge";
@@ -412,6 +413,8 @@ function EndpointDetailPage() {
         )}
 
         {!archived && circuit && <ReceiverChecksSection circuit={circuit} />}
+
+        <DiagnosisCard key={`${projectId}:${endpointId}`} projectId={projectId} endpointId={endpointId} />
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
           <section className="rounded-[18px] border border-[#D8E3DB] bg-white p-6 shadow-[0_8px_30px_rgba(32,78,53,0.05)] lg:col-span-2">

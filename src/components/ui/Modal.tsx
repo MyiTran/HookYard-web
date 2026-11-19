@@ -7,6 +7,7 @@ type ModalProps = {
   children: ReactNode;
   footer?: ReactNode;
   dismissible?: boolean;
+  describedById?: string;
 };
 
 const SCROLL_CLASS =
@@ -15,7 +16,7 @@ const SCROLL_CLASS =
 const FOCUSABLE_SELECTOR =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-function Modal({ title, onClose, children, footer, dismissible = true }: ModalProps) {
+function Modal({ title, onClose, children, footer, dismissible = true, describedById }: ModalProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -83,6 +84,7 @@ function Modal({ title, onClose, children, footer, dismissible = true }: ModalPr
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        aria-describedby={describedById}
         tabIndex={-1}
         onKeyDown={handleDialogKeyDown}
         onMouseDown={(event) => event.stopPropagation()}
