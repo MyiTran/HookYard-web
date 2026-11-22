@@ -1,5 +1,9 @@
 # React + TypeScript + Vite
 
+## Google Sign-In
+
+Set `VITE_GOOGLE_CLIENT_ID` to the Google Web OAuth client ID used by the backend. Configure Google Cloud authorized JavaScript origins for the local frontend, staging frontend, and production frontend origins. Do not add a client secret to this application.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

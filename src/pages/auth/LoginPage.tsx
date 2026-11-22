@@ -1,44 +1,83 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import GoogleSignIn from "../../components/auth/GoogleSignIn";
 import Brand from "../../components/branding/Brand";
-import { API_URL } from "../../config";
-import { formatApiError } from "../../lib/apiError";
+import { GOOGLE_CLIENT_ID } from "../../config";
+import { signInWithGoogle, signInWithPassword } from "../../lib/auth";
 
 function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleUnavailable, setGoogleUnavailable] = useState(!GOOGLE_CLIENT_ID);
+  const [googleCooldown, setGoogleCooldown] = useState(false);
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  const cooldownTimerRef = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (cooldownTimerRef.current !== null) window.clearTimeout(cooldownTimerRef.current);
+  }, []);
+
+  function showError(message: string) {
+    setError(message);
+    requestAnimationFrame(() => errorRef.current?.focus());
+  }
 
   async function handleSubmit() {
     setError("");
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/auth/sign_in`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ user: { email, password } }),
-      });
+      const result = await signInWithPassword(email, password);
 
-      const token = response.headers.get("Authorization");
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok || !token) {
-        setError(formatApiError(data, "Email or password is incorrect!"));
+      if (!result.ok) {
+        showError(result.error);
         return;
       }
-
-      localStorage.setItem("token", token);
-
       window.location.href = "/";
     } catch {
-      setError("Cannot connect to the server. Please try again!");
+      showError("Cannot connect to the server. Please try again!");
     } finally {
       setLoading(false);
     }
   }
+
+  const handleGoogleCredential = useCallback(async (credential: string) => {
+    if (googleLoading || googleCooldown) return;
+
+    setError("");
+    setGoogleLoading(true);
+
+    try {
+      const result = await signInWithGoogle(credential);
+
+      if (!result.ok) {
+        if (result.status === 409) {
+          showError("An account already exists for this email. Sign in with your email and password.");
+        } else if (result.status === 429) {
+          showError("Google sign-in is temporarily unavailable. Please try again shortly.");
+          setGoogleCooldown(true);
+          cooldownTimerRef.current = window.setTimeout(() => setGoogleCooldown(false), Math.max(1, result.retryAfterSeconds ?? 30) * 1000);
+        } else if (result.status === 0 || result.status >= 500) {
+          showError("Unable to complete Google sign-in. Please try again.");
+        } else {
+          showError("Google sign-in could not be verified. Please try again.");
+        }
+        return;
+      }
+
+      window.location.href = "/";
+    } catch {
+      showError("Unable to complete Google sign-in. Please try again.");
+    } finally {
+      setGoogleLoading(false);
+    }
+  }, [googleCooldown, googleLoading]);
+
+  const handleGoogleUnavailable = useCallback(() => {
+    setGoogleUnavailable(true);
+  }, []);
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#EBEFEC] p-6 text-[#17211B]">
       <main className="grid min-h-[700px] w-full max-w-6xl overflow-hidden rounded-[28px] border border-[#C8DACD] bg-white shadow-[0_24px_70px_rgba(32,78,53,0.10)] lg:grid-cols-2">
@@ -82,8 +121,27 @@ function LoginPage() {
               Enter your account details to continue
             </p>
 
+            <div className="mt-8 min-h-11">
+              {GOOGLE_CLIENT_ID && !googleUnavailable ? (
+                <GoogleSignIn
+                  clientId={GOOGLE_CLIENT_ID}
+                  disabled={googleLoading || googleCooldown}
+                  onCredential={handleGoogleCredential}
+                  onUnavailable={handleGoogleUnavailable}
+                />
+              ) : (
+                <p className="pt-2 text-center text-sm text-[#718078]">Google Sign-In is currently unavailable.</p>
+              )}
+            </div>
+
+            <div className="my-8 flex items-center gap-3 text-xs font-medium uppercase tracking-[2px] text-[#8A9990]">
+              <span className="h-px flex-1 bg-[#DCE6DE]" />
+              <span>OR CONTINUE WITH EMAIL</span>
+              <span className="h-px flex-1 bg-[#DCE6DE]" />
+            </div>
+
             <form
-              className="mt-10 space-y-6"
+              className="space-y-6"
               onSubmit={async (event) => {
                 event.preventDefault();
                 await handleSubmit();
@@ -127,7 +185,7 @@ function LoginPage() {
               </div>
 
               {error && (
-                <p className="rounded-xl bg-[#FBEEEE] px-4 py-3 text-sm text-[#B42318]">
+                <p ref={errorRef} role="alert" tabIndex={-1} className="rounded-xl bg-[#FBEEEE] px-4 py-3 text-sm text-[#B42318]">
                   {error}
                 </p>
               )}
@@ -141,7 +199,7 @@ function LoginPage() {
               </button>
             </form>
 
-            <p className="mt-7 text-center text-sm text-[#718078]">
+            <p className="mt-8 text-center text-sm text-[#718078]">
                 Don&apos;t have an account?{" "}
                 <a href="/users/sign_up" className="font-semibold text-[#23613F] hover:underline">Create account</a>
             </p>
