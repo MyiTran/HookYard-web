@@ -44,4 +44,22 @@ describe("GoogleSignIn", () => {
     expect(renderButton).toHaveBeenCalledTimes(1);
     expect(container.querySelectorAll("button")).toHaveLength(1);
   });
+
+  it("keeps GIS initialized while callbacks and disabled state change", async () => {
+    let callback: GoogleCallback | undefined;
+    const initialize = jest.fn((options: { callback: GoogleCallback }) => { callback = options.callback; });
+    const renderButton = jest.fn((element: HTMLElement) => element.append(document.createElement("button")));
+    window.google = { accounts: { id: { initialize, renderButton } } };
+    const firstCallback = jest.fn<(credential: string) => void>();
+    const { rerender, container } = render(<GoogleSignIn clientId="fake-client-id" disabled={false} onCredential={firstCallback} onUnavailable={jest.fn()} />);
+    await waitFor(() => expect(initialize).toHaveBeenCalledTimes(1));
+    const latestCallback = jest.fn<(credential: string) => void>();
+    rerender(<GoogleSignIn clientId="fake-client-id" disabled={true} onCredential={latestCallback} onUnavailable={jest.fn()} />);
+    rerender(<GoogleSignIn clientId="fake-client-id" disabled={false} onCredential={latestCallback} onUnavailable={jest.fn()} />);
+    expect(initialize).toHaveBeenCalledTimes(1);
+    expect(renderButton).toHaveBeenCalledTimes(1);
+    expect(container.querySelectorAll("button")).toHaveLength(1);
+    act(() => callback?.({ credential: "fake-google-id-token" }));
+    expect(latestCallback).toHaveBeenCalledWith("fake-google-id-token");
+  });
 });

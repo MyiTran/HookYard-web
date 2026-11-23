@@ -27,7 +27,11 @@ function loadGoogleIdentityServices(): Promise<void> {
     script.async = true;
     script.defer = true;
     script.onload = () => window.google?.accounts.id ? resolve() : reject(new Error("Google Identity Services did not initialize."));
-    script.onerror = () => reject(new Error("Google Identity Services could not load."));
+    script.onerror = () => {
+      script.remove();
+      gisLoadPromise = null;
+      reject(new Error("Google Identity Services could not load."));
+    };
     document.head.appendChild(script);
   });
 
@@ -44,6 +48,15 @@ type GoogleSignInProps = {
 function GoogleSignIn({ clientId, disabled, onCredential, onUnavailable }: GoogleSignInProps) {
   const buttonRef = useRef<HTMLDivElement>(null);
   const handledCredential = useRef(false);
+  const onCredentialRef = useRef(onCredential);
+  const onUnavailableRef = useRef(onUnavailable);
+  const disabledRef = useRef(disabled);
+
+  useEffect(() => {
+    onCredentialRef.current = onCredential;
+    onUnavailableRef.current = onUnavailable;
+    disabledRef.current = disabled;
+  }, [disabled, onCredential, onUnavailable]);
 
   useEffect(() => {
     let active = true;
@@ -55,9 +68,9 @@ function GoogleSignIn({ clientId, disabled, onCredential, onUnavailable }: Googl
         window.google.accounts.id.initialize({
           client_id: clientId,
           callback: ({ credential }) => {
-            if (!credential || handledCredential.current) return;
+            if (!credential || disabledRef.current || handledCredential.current) return;
             handledCredential.current = true;
-            void Promise.resolve(onCredential(credential)).finally(() => {
+            void Promise.resolve(onCredentialRef.current(credential)).finally(() => {
               handledCredential.current = false;
             });
           },
@@ -73,15 +86,20 @@ function GoogleSignIn({ clientId, disabled, onCredential, onUnavailable }: Googl
         });
       })
       .catch(() => {
-        if (active) onUnavailable();
+        if (active) onUnavailableRef.current();
       });
 
     return () => {
       active = false;
     };
-  }, [clientId, onCredential, onUnavailable]);
+  }, [clientId]);
 
-  return <div aria-disabled={disabled} className={`flex min-h-11 w-full justify-center ${disabled ? "pointer-events-none opacity-60" : ""}`} ref={buttonRef} />;
+  return (
+    <div aria-busy={disabled} aria-disabled={disabled} className="relative flex min-h-11 w-full justify-center">
+      <div ref={buttonRef} inert={disabled} className={disabled ? "pointer-events-none opacity-0" : ""} />
+      {disabled && <div className="absolute inset-0 flex items-center justify-center text-sm text-[#718078]">Google sign-in is in progress.</div>}
+    </div>
+  );
 }
 
 export default GoogleSignIn;

@@ -48,14 +48,23 @@ describe("LoginPage Google errors", () => {
     expect((await screen.findByRole("alert")).textContent).toContain("An account already exists for this email. Sign in with your email and password.");
   });
 
+  it("uses the generic Google error for an unrelated conflict", async () => {
+    respond(409, { code: "other_conflict" });
+    await renderReadyPage();
+    await act(async () => callback?.({ credential: "fake-google-id-token" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("Google sign-in could not be verified. Please try again.");
+  });
+
   it("uses retry_after to disable Google sign-in then enables it", async () => {
     jest.useFakeTimers();
     respond(429, { retry_after: 2 });
     await renderReadyPage();
     await act(async () => callback?.({ credential: "fake-google-id-token" }));
     expect(document.body.contains(await screen.findByRole("alert"))).toBe(true);
-    await act(async () => { jest.advanceTimersByTime(2000); });
+    expect(screen.getByText("Google sign-in is in progress.").parentElement?.getAttribute("aria-disabled")).toBe("true");
     expect(screen.getByLabelText(/email/i).hasAttribute("disabled")).toBe(false);
+    await act(async () => { jest.advanceTimersByTime(2000); });
+    expect(window.google?.accounts.id.renderButton).toHaveBeenCalled();
   });
 
   it("keeps password login usable when Google is unavailable", async () => {
@@ -68,10 +77,9 @@ describe("LoginPage Google errors", () => {
 
   it("places Google sign-in before the email form and uses the email divider label", async () => {
     await renderReadyPage();
-    const googleContainer = document.querySelector('[aria-disabled="false"]');
+    const divider = screen.getByText("OR CONTINUE WITH EMAIL");
     const email = screen.getByLabelText(/email/i);
 
-    expect(googleContainer?.compareDocumentPosition(email)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(screen.getByText("OR CONTINUE WITH EMAIL")).toBeTruthy();
+    expect(divider.compareDocumentPosition(email)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 });

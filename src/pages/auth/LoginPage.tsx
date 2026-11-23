@@ -53,7 +53,7 @@ function LoginPage() {
       const result = await signInWithGoogle(credential);
 
       if (!result.ok) {
-        if (result.status === 409) {
+        if (result.code === "account_link_required") {
           showError("An account already exists for this email. Sign in with your email and password.");
         } else if (result.status === 429) {
           showError("Google sign-in is temporarily unavailable. Please try again shortly.");

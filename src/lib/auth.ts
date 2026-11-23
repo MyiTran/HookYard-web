@@ -3,7 +3,12 @@ import { formatApiError } from "./apiError";
 
 type SignInResult =
   | { ok: true; user: unknown }
-  | { ok: false; error: string; status: number; retryAfterSeconds: number | null };
+  | { ok: false; error: string; status: number; code: string | null; retryAfterSeconds: number | null };
+
+function toPositiveSeconds(value: unknown): number | null {
+  const parsed = typeof value === "number" || typeof value === "string" ? Number(value) : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? Math.ceil(parsed) : null;
+}
 
 async function completeSignIn(response: Response, fallback: string): Promise<SignInResult> {
   const token = response.headers.get("Authorization");
@@ -14,11 +19,10 @@ async function completeSignIn(response: Response, fallback: string): Promise<Sig
   if (!response.ok || !hasValidToken || !hasUser) {
     const retryAfter = response.headers.get("Retry-After");
     const record = data && typeof data === "object" ? data as Record<string, unknown> : null;
-    const retryAfterSeconds = typeof record?.retry_after === "number"
-      ? record.retry_after
-      : Number.isFinite(Number(retryAfter)) ? Number(retryAfter) : null;
+    const retryAfterSeconds = toPositiveSeconds(record?.retry_after) ?? toPositiveSeconds(retryAfter);
+    const code = typeof record?.code === "string" ? record.code : null;
 
-    return { ok: false, error: formatApiError(data, fallback), status: response.status, retryAfterSeconds };
+    return { ok: false, error: formatApiError(data, fallback), status: response.status, code, retryAfterSeconds };
   }
 
   localStorage.setItem("token", token!);

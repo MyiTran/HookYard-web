@@ -66,4 +66,36 @@ describe("signInWithGoogle", () => {
     expect(sessionStorage.getItem("credential")).toBeNull();
     expect(window.location.href).not.toContain("fake-google-id-token");
   });
+
+  it("preserves account_link_required and prefers a valid JSON retry_after over the header", async () => {
+    Object.assign(global, { fetch: jest.fn<typeof fetch>().mockResolvedValue({
+      ok: false, status: 409,
+      headers: { get: (name: string) => name === "Retry-After" ? "2" : null },
+      json: async () => ({ code: "account_link_required", retry_after: 2.2 }),
+    } as unknown as Response) });
+
+    await expect(signInWithGoogle("fake-google-id-token")).resolves.toEqual(expect.objectContaining({
+      ok: false, code: "account_link_required", retryAfterSeconds: 3,
+    }));
+  });
+
+  it.each([null, "", "0", "-1", "NaN", "Infinity"])("rejects invalid Retry-After header %p", async (header) => {
+    Object.assign(global, { fetch: jest.fn<typeof fetch>().mockResolvedValue({
+      ok: false, status: 429,
+      headers: { get: (name: string) => name === "Retry-After" ? header : null },
+      json: async () => ({}),
+    } as unknown as Response) });
+
+    await expect(signInWithGoogle("fake-google-id-token")).resolves.toEqual(expect.objectContaining({ retryAfterSeconds: null }));
+  });
+
+  it("uses a valid Retry-After header when JSON retry_after is absent", async () => {
+    Object.assign(global, { fetch: jest.fn<typeof fetch>().mockResolvedValue({
+      ok: false, status: 429,
+      headers: { get: (name: string) => name === "Retry-After" ? "1.2" : null },
+      json: async () => ({}),
+    } as unknown as Response) });
+
+    await expect(signInWithGoogle("fake-google-id-token")).resolves.toEqual(expect.objectContaining({ retryAfterSeconds: 2 }));
+  });
 });
