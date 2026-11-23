@@ -61,7 +61,8 @@ describe("LoginPage Google errors", () => {
     await renderReadyPage();
     await act(async () => callback?.({ credential: "fake-google-id-token" }));
     expect(document.body.contains(await screen.findByRole("alert"))).toBe(true);
-    expect(screen.getByText("Google sign-in is in progress.").parentElement?.getAttribute("aria-disabled")).toBe("true");
+    expect(screen.getByRole("group", { name: "Google sign-in" }).getAttribute("aria-disabled")).toBe("true");
+    expect(screen.getByText("Google sign-in is temporarily unavailable. Please try again shortly.")).toBeTruthy();
     expect(screen.getByLabelText(/email/i).hasAttribute("disabled")).toBe(false);
     await act(async () => { jest.advanceTimersByTime(2000); });
     expect(window.google?.accounts.id.renderButton).toHaveBeenCalled();

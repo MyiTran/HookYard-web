@@ -26,7 +26,12 @@ function loadGoogleIdentityServices(): Promise<void> {
     script.src = "https://accounts.google.com/gsi/client";
     script.async = true;
     script.defer = true;
-    script.onload = () => window.google?.accounts.id ? resolve() : reject(new Error("Google Identity Services did not initialize."));
+    script.onload = () => {
+      if (window.google?.accounts.id) return resolve();
+      script.remove();
+      gisLoadPromise = null;
+      reject(new Error("Google Identity Services did not initialize."));
+    };
     script.onerror = () => {
       script.remove();
       gisLoadPromise = null;
@@ -41,11 +46,12 @@ function loadGoogleIdentityServices(): Promise<void> {
 type GoogleSignInProps = {
   clientId: string;
   disabled: boolean;
+  statusMessage: string | null;
   onCredential: (credential: string) => Promise<void> | void;
   onUnavailable: () => void;
 };
 
-function GoogleSignIn({ clientId, disabled, onCredential, onUnavailable }: GoogleSignInProps) {
+function GoogleSignIn({ clientId, disabled, statusMessage, onCredential, onUnavailable }: GoogleSignInProps) {
   const buttonRef = useRef<HTMLDivElement>(null);
   const handledCredential = useRef(false);
   const onCredentialRef = useRef(onCredential);
@@ -95,9 +101,9 @@ function GoogleSignIn({ clientId, disabled, onCredential, onUnavailable }: Googl
   }, [clientId]);
 
   return (
-    <div aria-busy={disabled} aria-disabled={disabled} className="relative flex min-h-11 w-full justify-center">
+    <div role="group" aria-label="Google sign-in" aria-busy={disabled} aria-disabled={disabled} className="relative flex min-h-11 w-full justify-center">
       <div ref={buttonRef} inert={disabled} className={disabled ? "pointer-events-none opacity-0" : ""} />
-      {disabled && <div className="absolute inset-0 flex items-center justify-center text-sm text-[#718078]">Google sign-in is in progress.</div>}
+      {disabled && <div className="absolute inset-0 flex items-center justify-center text-sm text-[#718078]">{statusMessage}</div>}
     </div>
   );
 }

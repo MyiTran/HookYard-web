@@ -13,7 +13,7 @@ function toPositiveSeconds(value: unknown): number | null {
 async function completeSignIn(response: Response, fallback: string): Promise<SignInResult> {
   const token = response.headers.get("Authorization");
   const data = await response.json().catch(() => null);
-  const hasValidToken = Boolean(token?.startsWith("Bearer ") && token.length > "Bearer ".length);
+  const hasValidToken = Boolean(token?.startsWith("Bearer ") && token.slice("Bearer ".length).trim());
   const hasUser = Boolean(data && typeof data === "object" && !Array.isArray(data));
 
   if (!response.ok || !hasValidToken || !hasUser) {

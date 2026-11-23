@@ -19,7 +19,7 @@ describe("GoogleSignIn", () => {
     const renderButton = jest.fn((element: HTMLElement) => element.append(document.createElement("button")));
     const onCredential = jest.fn<(credential: string) => void>();
     const onUnavailable = jest.fn();
-    const { container } = render(<GoogleSignIn clientId="fake-client-id" disabled={false} onCredential={onCredential} onUnavailable={onUnavailable} />);
+    const { container } = render(<GoogleSignIn clientId="fake-client-id" disabled={false} statusMessage={null} onCredential={onCredential} onUnavailable={onUnavailable} />);
 
     const script = document.querySelector<HTMLScriptElement>('script[src="https://accounts.google.com/gsi/client"]');
     expect(script).not.toBeNull();
@@ -37,7 +37,7 @@ describe("GoogleSignIn", () => {
     const initialize = jest.fn();
     const renderButton = jest.fn((element: HTMLElement) => element.append(document.createElement("button")));
     window.google = { accounts: { id: { initialize, renderButton } } };
-    const { container } = render(<StrictMode><GoogleSignIn clientId="fake-client-id" disabled={false} onCredential={jest.fn<(credential: string) => void>()} onUnavailable={jest.fn()} /></StrictMode>);
+    const { container } = render(<StrictMode><GoogleSignIn clientId="fake-client-id" disabled={false} statusMessage={null} onCredential={jest.fn<(credential: string) => void>()} onUnavailable={jest.fn()} /></StrictMode>);
 
     await waitFor(() => expect(initialize).toHaveBeenCalled());
     expect(document.querySelectorAll('script[src="https://accounts.google.com/gsi/client"]')).toHaveLength(0);
@@ -51,11 +51,11 @@ describe("GoogleSignIn", () => {
     const renderButton = jest.fn((element: HTMLElement) => element.append(document.createElement("button")));
     window.google = { accounts: { id: { initialize, renderButton } } };
     const firstCallback = jest.fn<(credential: string) => void>();
-    const { rerender, container } = render(<GoogleSignIn clientId="fake-client-id" disabled={false} onCredential={firstCallback} onUnavailable={jest.fn()} />);
+    const { rerender, container } = render(<GoogleSignIn clientId="fake-client-id" disabled={false} statusMessage={null} onCredential={firstCallback} onUnavailable={jest.fn()} />);
     await waitFor(() => expect(initialize).toHaveBeenCalledTimes(1));
     const latestCallback = jest.fn<(credential: string) => void>();
-    rerender(<GoogleSignIn clientId="fake-client-id" disabled={true} onCredential={latestCallback} onUnavailable={jest.fn()} />);
-    rerender(<GoogleSignIn clientId="fake-client-id" disabled={false} onCredential={latestCallback} onUnavailable={jest.fn()} />);
+    rerender(<GoogleSignIn clientId="fake-client-id" disabled={true} statusMessage="Signing in with Google…" onCredential={latestCallback} onUnavailable={jest.fn()} />);
+    rerender(<GoogleSignIn clientId="fake-client-id" disabled={false} statusMessage={null} onCredential={latestCallback} onUnavailable={jest.fn()} />);
     expect(initialize).toHaveBeenCalledTimes(1);
     expect(renderButton).toHaveBeenCalledTimes(1);
     expect(container.querySelectorAll("button")).toHaveLength(1);

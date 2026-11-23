@@ -126,6 +126,7 @@ function LoginPage() {
                 <GoogleSignIn
                   clientId={GOOGLE_CLIENT_ID}
                   disabled={googleLoading || googleCooldown}
+                statusMessage={googleCooldown ? "Google sign-in is temporarily unavailable. Please try again shortly." : "Signing in with Google…"}
                   onCredential={handleGoogleCredential}
                   onUnavailable={handleGoogleUnavailable}
                 />
