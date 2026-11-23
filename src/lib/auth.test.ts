@@ -67,6 +67,16 @@ describe("signInWithGoogle", () => {
     expect(window.location.href).not.toContain("fake-google-id-token");
   });
 
+  it.each(["Bearer", "Bearer ", "Bearer    ", "Bearer abc def"])("rejects malformed Authorization %p without replacing a session", async (authorization) => {
+    localStorage.setItem("token", "Bearer existing-jwt");
+    Object.assign(global, { fetch: jest.fn<typeof fetch>().mockResolvedValue({
+      ok: true, status: 200, headers: { get: () => authorization }, json: async () => ({ id: "1" }),
+    } as unknown as Response) });
+
+    await expect(signInWithGoogle("fake-google-id-token")).resolves.toEqual(expect.objectContaining({ ok: false }));
+    expect(localStorage.getItem("token")).toBe("Bearer existing-jwt");
+  });
+
   it("preserves account_link_required and prefers a valid JSON retry_after over the header", async () => {
     Object.assign(global, { fetch: jest.fn<typeof fetch>().mockResolvedValue({
       ok: false, status: 409,

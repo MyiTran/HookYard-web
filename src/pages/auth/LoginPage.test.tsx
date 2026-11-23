@@ -35,6 +35,8 @@ describe("LoginPage Google errors", () => {
   it("shows a safe verification error for an invalid credential and focuses it", async () => {
     respond(401, { error: "invalid" });
     await renderReadyPage();
+    const initializeCalls = window.google?.accounts.id.initialize.mock.calls.length;
+    const renderCalls = window.google?.accounts.id.renderButton.mock.calls.length;
     await act(async () => callback?.({ credential: "fake-google-id-token" }));
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("Google sign-in could not be verified. Please try again.");
@@ -62,10 +64,13 @@ describe("LoginPage Google errors", () => {
     await act(async () => callback?.({ credential: "fake-google-id-token" }));
     expect(document.body.contains(await screen.findByRole("alert"))).toBe(true);
     expect(screen.getByRole("group", { name: "Google sign-in" }).getAttribute("aria-disabled")).toBe("true");
-    expect(screen.getByText("Google sign-in is temporarily unavailable. Please try again shortly.")).toBeTruthy();
+    expect(screen.getByRole("group", { name: "Google sign-in" }).textContent).toContain("Google sign-in is temporarily unavailable. Please try again shortly.");
     expect(screen.getByLabelText(/email/i).hasAttribute("disabled")).toBe(false);
     await act(async () => { jest.advanceTimersByTime(2000); });
-    expect(window.google?.accounts.id.renderButton).toHaveBeenCalled();
+    expect(screen.getByRole("group", { name: "Google sign-in" }).getAttribute("aria-disabled")).toBe("false");
+    expect(screen.queryByText("Google sign-in is temporarily unavailable. Please try again shortly.")).toBeNull();
+    expect(window.google?.accounts.id.initialize.mock.calls).toHaveLength(initializeCalls ?? 0);
+    expect(window.google?.accounts.id.renderButton.mock.calls).toHaveLength(renderCalls ?? 0);
   });
 
   it("keeps password login usable when Google is unavailable", async () => {
