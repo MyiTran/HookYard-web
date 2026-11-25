@@ -45,8 +45,8 @@ function PrivacyPolicyPage() {
         <h3 className="text-lg font-semibold text-[#1F2A24]">Authentication and storage</h3>
         <p>
           A session token is stored in your browser's local storage and is sent with requests to the
-          HookYard backend service. Account and service data are stored and processed by that backend
-          service and its hosting providers.
+          HookYard backend service. Account and service data are stored and processed by the HookYard
+          backend service.
         </p>
       </section>
 
