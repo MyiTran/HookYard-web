@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useNotifications } from "../../hooks/notificationsContext";
+import { toSafeNotificationPath } from "../../lib/notificationTarget";
 import { acceptInvitation, declineInvitation } from "../../lib/projectApi";
 import type { Notification } from "../../types/notification";
 import BellIcon from "../icons/BellIcon";
@@ -22,7 +23,11 @@ function NotificationDropdown({ onClose }: NotificationDropdownProps) {
     onClose();
 
     if (notification.target_url) {
-      navigate(notification.target_url);
+      const targetPath = toSafeNotificationPath(notification.target_url);
+
+      if (targetPath) {
+        navigate(targetPath);
+      }
     }
   }
 

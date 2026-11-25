@@ -16,6 +16,7 @@ import AdminProjectsPage from "./pages/admin/projects/AdminProjectsPage";
 import ConfirmAccountPage from "./pages/auth/ConfirmAccountPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import LoginPage from "./pages/auth/LoginPage";
+import NotFoundPage from "./pages/NotFoundPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import SignupPage from "./pages/auth/SignupPage";
 import SupportDashboardPage from "./pages/support/dashboard/DashboardPage";
@@ -160,7 +161,7 @@ function App() {
         </Route>
       </Route>
 
-      <Route path="*" element={<Navigate to="/users/sign_in" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }
