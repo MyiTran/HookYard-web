@@ -123,6 +123,14 @@ function SignupPage() {
             Sign in
           </Link>
         </p>
+
+        <p className="mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs font-medium text-[#8A9990]">
+          <Link to="/privacy" className="text-[#23613F] hover:underline">Privacy</Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/terms" className="text-[#23613F] hover:underline">Terms</Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/contact" className="text-[#23613F] hover:underline">Contact</Link>
+        </p>
       </main>
     </div>
   );

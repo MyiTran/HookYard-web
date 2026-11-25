@@ -16,9 +16,12 @@ import AdminProjectsPage from "./pages/admin/projects/AdminProjectsPage";
 import ConfirmAccountPage from "./pages/auth/ConfirmAccountPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import LoginPage from "./pages/auth/LoginPage";
-import NotFoundPage from "./pages/NotFoundPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import SignupPage from "./pages/auth/SignupPage";
+import NotFoundPage from "./pages/NotFoundPage";
+import ContactPage from "./pages/public/ContactPage";
+import PrivacyPolicyPage from "./pages/public/PrivacyPolicyPage";
+import TermsOfServicePage from "./pages/public/TermsOfServicePage";
 import SupportDashboardPage from "./pages/support/dashboard/DashboardPage";
 import DeliveriesPage from "./pages/support/deliveries/DeliveriesPage";
 import IngestRejectionsPage from "./pages/support/deliveries/IngestRejectionsPage";
@@ -133,6 +136,9 @@ function App() {
       <Route path="/users/password/new" element={<ForgotPasswordPage />} />
       <Route path="/users/password/edit" element={<ResetPasswordPage />} />
       <Route path="/confirm" element={<ConfirmAccountPage />} />
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms" element={<TermsOfServicePage />} />
+      <Route path="/contact" element={<ContactPage />} />
 
       <Route element={<PrivateRoute />}>
         <Route path="/" element={<SupportDashboardPage />} />

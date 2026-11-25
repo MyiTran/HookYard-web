@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import Brand from "../../components/branding/Brand";
 import { API_URL } from "../../config";
 import { formatApiError } from "../../lib/apiError";
@@ -142,8 +143,16 @@ function LoginPage() {
             </form>
 
             <p className="mt-7 text-center text-sm text-[#718078]">
-                Don&apos;t have an account?{" "}
+                Don't have an account?{" "}
                 <a href="/users/sign_up" className="font-semibold text-[#23613F] hover:underline">Create account</a>
+            </p>
+
+            <p className="mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs font-medium text-[#8A9990]">
+              <Link to="/privacy" className="text-[#23613F] hover:underline">Privacy</Link>
+              <span aria-hidden="true">·</span>
+              <Link to="/terms" className="text-[#23613F] hover:underline">Terms</Link>
+              <span aria-hidden="true">·</span>
+              <Link to="/contact" className="text-[#23613F] hover:underline">Contact</Link>
             </p>
           </div>
         </section>
