@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import GoogleSignIn from "../../components/auth/GoogleSignIn";
 import Brand from "../../components/branding/Brand";
 import { GOOGLE_CLIENT_ID } from "../../config";
 import { signInWithGoogle, signInWithPassword } from "../../lib/auth";
+
+const googleRateLimitMessage = "Google sign-in is temporarily unavailable. Please try again shortly.";
 
 function LoginPage() {
   const [email, setEmail] = useState("");
@@ -56,9 +59,12 @@ function LoginPage() {
         if (result.code === "account_link_required") {
           showError("An account already exists for this email. Sign in with your email and password.");
         } else if (result.status === 429) {
-          showError("Google sign-in is temporarily unavailable. Please try again shortly.");
+          showError(googleRateLimitMessage);
           setGoogleCooldown(true);
-          cooldownTimerRef.current = window.setTimeout(() => setGoogleCooldown(false), Math.max(1, result.retryAfterSeconds ?? 30) * 1000);
+          cooldownTimerRef.current = window.setTimeout(() => {
+            setGoogleCooldown(false);
+            setError((currentError) => currentError === googleRateLimitMessage ? "" : currentError);
+          }, Math.max(1, result.retryAfterSeconds ?? 30) * 1000);
         } else if (result.status === 0 || result.status >= 500) {
           showError("Unable to complete Google sign-in. Please try again.");
         } else {
@@ -201,8 +207,16 @@ function LoginPage() {
             </form>
 
             <p className="mt-8 text-center text-sm text-[#718078]">
-                Don&apos;t have an account?{" "}
-                <a href="/users/sign_up" className="font-semibold text-[#23613F] hover:underline">Create account</a>
+              Don&apos;t have an account?{" "}
+              <a href="/users/sign_up" className="font-semibold text-[#23613F] hover:underline">Create account</a>
+            </p>
+
+            <p className="mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs font-medium text-[#8A9990]">
+              <Link to="/privacy" className="text-[#23613F] hover:underline">Privacy</Link>
+              <span aria-hidden="true">·</span>
+              <Link to="/terms" className="text-[#23613F] hover:underline">Terms</Link>
+              <span aria-hidden="true">·</span>
+              <Link to="/contact" className="text-[#23613F] hover:underline">Contact</Link>
             </p>
           </div>
         </section>

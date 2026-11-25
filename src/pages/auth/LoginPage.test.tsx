@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
+import { BrowserRouter } from "react-router-dom";
 
 jest.mock("../../config", () => ({ API_URL: "http://api.example.test/api/v1", GOOGLE_CLIENT_ID: "fake-client-id" }));
 
@@ -10,17 +11,18 @@ type GoogleCallback = (response: { credential?: string }) => void;
 
 describe("LoginPage Google errors", () => {
   let callback: GoogleCallback | undefined;
+  let initialize = jest.fn((options: { callback: GoogleCallback }) => { callback = options.callback; });
+  let renderButton = jest.fn();
 
   function installGoogle() {
-    window.google = { accounts: { id: {
-      initialize: jest.fn((options: { callback: GoogleCallback }) => { callback = options.callback; }),
-      renderButton: jest.fn(),
-    } } };
+    initialize = jest.fn((options: { callback: GoogleCallback }) => { callback = options.callback; });
+    renderButton = jest.fn();
+    window.google = { accounts: { id: { initialize, renderButton } } };
   }
 
   async function renderReadyPage() {
     installGoogle();
-    render(<LoginPage />);
+    render(<BrowserRouter><LoginPage /></BrowserRouter>);
     await waitFor(() => expect(window.google?.accounts.id.initialize).toHaveBeenCalled());
   }
 
@@ -35,8 +37,6 @@ describe("LoginPage Google errors", () => {
   it("shows a safe verification error for an invalid credential and focuses it", async () => {
     respond(401, { error: "invalid" });
     await renderReadyPage();
-    const initializeCalls = window.google?.accounts.id.initialize.mock.calls.length;
-    const renderCalls = window.google?.accounts.id.renderButton.mock.calls.length;
     await act(async () => callback?.({ credential: "fake-google-id-token" }));
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("Google sign-in could not be verified. Please try again.");
@@ -61,6 +61,8 @@ describe("LoginPage Google errors", () => {
     jest.useFakeTimers();
     respond(429, { retry_after: 2 });
     await renderReadyPage();
+    const initializeCalls = initialize.mock.calls.length;
+    const renderCalls = renderButton.mock.calls.length;
     await act(async () => callback?.({ credential: "fake-google-id-token" }));
     expect(document.body.contains(await screen.findByRole("alert"))).toBe(true);
     expect(screen.getByRole("group", { name: "Google sign-in" }).getAttribute("aria-disabled")).toBe("true");
@@ -69,13 +71,13 @@ describe("LoginPage Google errors", () => {
     await act(async () => { jest.advanceTimersByTime(2000); });
     expect(screen.getByRole("group", { name: "Google sign-in" }).getAttribute("aria-disabled")).toBe("false");
     expect(screen.queryByText("Google sign-in is temporarily unavailable. Please try again shortly.")).toBeNull();
-    expect(window.google?.accounts.id.initialize.mock.calls).toHaveLength(initializeCalls ?? 0);
-    expect(window.google?.accounts.id.renderButton.mock.calls).toHaveLength(renderCalls ?? 0);
+    expect(initialize.mock.calls).toHaveLength(initializeCalls);
+    expect(renderButton.mock.calls).toHaveLength(renderCalls);
   });
 
   it("keeps password login usable when Google is unavailable", async () => {
     delete window.google;
-    render(<LoginPage />);
+    render(<BrowserRouter><LoginPage /></BrowserRouter>);
     fireEvent.error(document.querySelector('script[src="https://accounts.google.com/gsi/client"]')!);
     expect(document.body.contains(await screen.findByText("Google Sign-In is currently unavailable."))).toBe(true);
     expect(screen.getByRole("button", { name: "Sign in" }).hasAttribute("disabled")).toBe(false);
