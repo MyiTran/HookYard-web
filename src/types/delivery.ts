@@ -2,6 +2,14 @@ import type { MessageReplay } from "./replay";
 
 export type MessageStatus = "pending" | "delivering" | "succeeded" | "failed";
 
+export type RealtimeDeliveryStatus =
+  | "pending"
+  | "processing"
+  | "succeeded"
+  | "failed"
+  | "held"
+  | "retry_scheduled";
+
 export type DeliveryState =
   | "queued"
   | "scheduled_retry"
@@ -25,6 +33,7 @@ export type DeliveryMessageSummary = {
   id: string;
   webhook_id: string;
   status: MessageStatus;
+  realtime_status?: RealtimeDeliveryStatus;
   event_id: string;
   event_type: string;
   created_at: string;

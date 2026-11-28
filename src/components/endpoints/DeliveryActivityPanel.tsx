@@ -1,6 +1,12 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
-import { DELIVERIES_PAGE_SIZE, listEndpointMessages } from "../../lib/deliveryApi";
+import { useEndpointDeliveryRealtime } from "../../hooks/useEndpointDeliveryRealtime";
+import {
+  applyEndpointDeliveryUpdate,
+  insertEndpointDeliveryUpdate,
+  type EndpointDeliveryUpdate,
+} from "../../lib/endpointDeliveryRealtime";
+import { DELIVERIES_PAGE_SIZE, getDeliveryMessage, listEndpointMessages } from "../../lib/deliveryApi";
 import { formatCount } from "../../lib/numberFormat";
 import type { NavState } from "../../lib/navState";
 import type { DeliveryMessageSummary } from "../../types/delivery";
@@ -42,6 +48,13 @@ function DeliveryActivityPanel({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reloadToken, setReloadToken] = useState(0);
+  const messagesRef = useRef<DeliveryMessageSummary[]>([]);
+  const pendingMessageUpdatesRef = useRef(new Map<string, EndpointDeliveryUpdate>());
+  const loadingMessageIdsRef = useRef(new Set<string>());
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,9 +67,11 @@ function DeliveryActivityPanel({
       if (cancelled) return;
 
       if (!result.ok) {
-        setError(result.error);
-        setMessages([]);
-        setMeta(null);
+        if (messagesRef.current.length === 0) {
+          setError(result.error);
+          setMessages([]);
+          setMeta(null);
+        }
         setLoading(false);
         return;
       }
@@ -99,6 +114,43 @@ function DeliveryActivityPanel({
 
     setSearchParams(params);
   }
+
+  const handleDeliveryUpdate = useCallback(async (update: EndpointDeliveryUpdate) => {
+    if (messagesRef.current.some((message) => message.id === update.messageId)) {
+      setMessages((currentMessages) => applyEndpointDeliveryUpdate(currentMessages, update));
+      return;
+    }
+
+    pendingMessageUpdatesRef.current.set(update.messageId, update);
+
+    if (loadingMessageIdsRef.current.has(update.messageId)) return;
+
+    loadingMessageIdsRef.current.add(update.messageId);
+
+    try {
+      const messageResult = await getDeliveryMessage(projectId, update.messageId);
+      const latestUpdate = pendingMessageUpdatesRef.current.get(update.messageId);
+
+      if (!messageResult.ok || !latestUpdate || messageResult.data.endpoint.id !== endpointId) return;
+
+      const alreadyDisplayed = messagesRef.current.some((message) => message.id === latestUpdate.messageId);
+
+      setMessages((currentMessages) => insertEndpointDeliveryUpdate(currentMessages, messageResult.data, latestUpdate));
+
+      if (!alreadyDisplayed) {
+        setMeta((currentMeta) => currentMeta ? { ...currentMeta, total_count: currentMeta.total_count + 1 } : currentMeta);
+      }
+    } finally {
+      pendingMessageUpdatesRef.current.delete(update.messageId);
+      loadingMessageIdsRef.current.delete(update.messageId);
+    }
+  }, [endpointId, projectId]);
+
+  const { status: realtimeStatus } = useEndpointDeliveryRealtime({
+    endpointId,
+    onDeliveryUpdate: handleDeliveryUpdate,
+    onConnected: () => setReloadToken((token) => token + 1),
+  });
 
   const totalPages = meta?.last_page ?? 1;
   const isClamping = Boolean(meta && page > meta.last_page);
@@ -160,9 +212,21 @@ function DeliveryActivityPanel({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold tracking-tight text-[#1F2A24]">Delivery activity</h2>
-          <p className="mt-1 text-xs font-medium text-[#8A9990]">
-            Webhook messages generated for this endpoint by matching events.
-          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <p className="text-xs font-medium text-[#8A9990]">Webhook messages generated for this endpoint by matching events.</p>
+            <span
+              role="status"
+              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                realtimeStatus === "connected"
+                  ? "bg-[#E7F1EA] text-[#23613F]"
+                  : realtimeStatus === "reconnecting"
+                    ? "bg-[#FBF1E4] text-[#8A5D14]"
+                    : "bg-[#F2F4F3] text-[#607267]"
+              }`}
+            >
+              {realtimeStatus === "connected" ? "Connected" : realtimeStatus === "reconnecting" ? "Reconnecting" : "Disconnected"}
+            </span>
+          </div>
         </div>
 
         {meta && meta.total_count > 0 && (

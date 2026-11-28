@@ -22,6 +22,7 @@ type DeliveryRowProps = {
 function DeliveryRow({ message, projectId, endpointId, endpointName, origin, page }: DeliveryRowProps) {
   const endpointPath = `/projects/${projectId}/endpoints/${endpointId}`;
   const backTo = page > 1 ? `${endpointPath}?deliveries_page=${page}` : endpointPath;
+  const displayStatus = message.realtime_status ?? message.status;
 
   return (
     <Link
@@ -39,7 +40,7 @@ function DeliveryRow({ message, projectId, endpointId, endpointName, origin, pag
           {message.hold ? (
             <DeliveryHoldBadge hold={message.hold} />
           ) : (
-            <DeliveryStatusBadge status={message.status} />
+            <DeliveryStatusBadge status={displayStatus} />
           )}
           <span className="min-w-0 truncate text-sm font-semibold tracking-tight text-[#1F2A24]" title={message.event_type}>
             {message.event_type}

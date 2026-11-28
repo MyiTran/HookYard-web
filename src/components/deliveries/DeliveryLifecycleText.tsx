@@ -4,7 +4,7 @@ import type { DeliveryMessageSummary, MessageStatus } from "../../types/delivery
 type DeliveryLifecycleTextProps = {
   message: Pick<
     DeliveryMessageSummary,
-    "status" | "attempt_count" | "max_attempts" | "next_retry_at" | "retryable" | "replay"
+    "status" | "realtime_status" | "attempt_count" | "max_attempts" | "next_retry_at" | "retryable" | "replay"
   >;
   className?: string;
 };
@@ -17,9 +17,15 @@ const TONE_CLASSES: Record<MessageStatus, string> = {
 };
 
 function DeliveryLifecycleText({ message, className = "" }: DeliveryLifecycleTextProps) {
+  const label = message.realtime_status === "held"
+    ? "Held"
+    : message.realtime_status === "retry_scheduled"
+      ? "Retry scheduled"
+      : deliveryLifecycleLabel(message);
+
   return (
     <span className={`font-semibold ${TONE_CLASSES[message.status]} ${className}`}>
-      {deliveryLifecycleLabel(message)}
+      {label}
     </span>
   );
 }
